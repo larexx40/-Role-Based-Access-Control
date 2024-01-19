@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface Role extends Document {
+export interface Role extends Document {
   name: string;
   domain: {
     name: string;
