@@ -8,7 +8,13 @@ interface Role extends Document {
   };
 }
 
-const roleSchema = new Schema<Role>({
+export interface RoleDocument extends Role, Document {
+    _id: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const roleSchema = new Schema<RoleDocument>({
   name: { type: String, required: true, unique: true },
   domain: {
     name: { type: String, required: true },
@@ -16,6 +22,6 @@ const roleSchema = new Schema<Role>({
   },
 });
 
-const RoleModel = mongoose.model<Role>('Role', roleSchema);
+const RoleModel = mongoose.model<RoleDocument>('Role', roleSchema);
 
 export default RoleModel;
