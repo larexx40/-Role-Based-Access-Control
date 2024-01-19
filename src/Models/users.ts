@@ -10,7 +10,7 @@ export interface IUser extends Document {
   username?: string;
   dob?: Date;
   address?: string;
-  role?: string[]; // Array of role names
+  roles?: string[]; // Array of role names
   status?: typeof statuses[number];
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
@@ -21,7 +21,13 @@ export interface IUser extends Document {
   mfaSecretExpiry?: number | null | '';
 }
 
-const userSchema = new Schema<IUser>({
+export interface IUserDocument extends IUser, Document {
+    _id: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+const userSchema = new Schema<IUserDocument>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phoneno: { type: String, required: true, unique: true},
@@ -29,7 +35,7 @@ const userSchema = new Schema<IUser>({
   username: { type: String, unique: true },
   dob: { type: Date },
   address: { type: String },
-  role: [{ type: String }], // Array of role names
+  roles: [{ type: String, ref: 'Role' }], // Reference to the Role model (relations wih roles)
   status: {
     type: String,
     enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED', 'BANNED'],
@@ -44,4 +50,4 @@ const userSchema = new Schema<IUser>({
   mfaSecretExpiry: { type: Date, required: false },
 });
 
-export const UserModel = model<IUser>('User', userSchema);
+export const UserModel = model<IUserDocument>('User', userSchema);
