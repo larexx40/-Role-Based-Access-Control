@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface Permission extends Document {
+export interface Permission extends Document {
   name: string;
 }
 

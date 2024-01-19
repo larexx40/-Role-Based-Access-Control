@@ -13,7 +13,7 @@ class UserRepository {
 
     static async getUser(whereClause: any): Promise<IUserDocument | null> {
         try {
-            return UserModel.findOne(whereClause).populate('roles'); // Populate the 'roles' field with actual role data
+            return await UserModel.findOne(whereClause).populate('roles'); // Populate the 'roles' field with actual role data
         } catch (error) {
             console.error("User DB error:", error);
             throw error;

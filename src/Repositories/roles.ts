@@ -23,7 +23,7 @@ class RoleRepository {
 
     static async getRole(whereClause: any, selectedFields: string[] = []): Promise<RoleDocument | null> {
         try {
-          const role = await RoleModel.findById(whereClause).select(selectedFields).exec();;
+          const role = await RoleModel.findOne(whereClause).select(selectedFields).exec();
           return role;
         } catch (error) {
           console.error("Role DB error:", error);
@@ -33,7 +33,7 @@ class RoleRepository {
     
     static async getRoles(selectedFields: string[] = []): Promise<RoleDocument[]> {
         try {
-          const roles = await RoleModel.find();
+          const roles = await RoleModel.find().select(selectedFields);
           return roles;
         } catch (error) {
           console.error("Role DB error:", error);
