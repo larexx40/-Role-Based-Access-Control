@@ -1,4 +1,5 @@
-import { IUser, IUserDocument, UserModel } from "../Models/users";
+// import {  IUserDocument, UserModel } from "../Models/users";
+import UserModel, { IUserDocument } from "../Models/users";
 import { UserData } from "../Types/types";
 
 class UserRepository {

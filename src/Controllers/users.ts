@@ -1,9 +1,10 @@
-import { AuthTokenPayload, UserData } from './../Types/types';
+import { AuthTokenPayload, UserData, UserProfile } from './../Types/types';
 import { NextFunction, Request, Response } from "express";
-import { OTPExpiryTime, generateVerificationOTP, hashPassword } from "../Utils/utils";
+import { OTPExpiryTime, comparePassword, generateVerificationOTP, hashPassword } from "../Utils/utils";
 import UserRepository from "../Repositories/users";
 import { signJwt } from '../Utils/jwt';
 import mongoose from 'mongoose';
+import { IUserDocument } from '../Models/users';
 
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
@@ -120,6 +121,136 @@ class UserController{
             console.error(error);
         }
 
+    }
+
+    static async login(req: Request, res: Response, next: NextFunction): Promise<void>{
+        // Check if the request body is empty
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email, password} = req.body;
+        if(!email || !password){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in the required fields",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        try {
+            //get user
+            const user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid email and or password",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //compare password
+            const hashedPassword: string | undefined = user?.password;
+            const isMatch = comparePassword(password, hashedPassword)
+            if(!isMatch){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Incorrect password",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            const profileDetails: UserProfile = {
+                _id: user._id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phoneno: user.phoneno,
+                dob: user.dob,
+                address: user.address,
+                roles: user.roles,
+                status: user.status,
+                isEmailVerified: user.isEmailVerified,
+                isPhoneVerified: user.isPhoneVerified,
+                mfaEnabled: user.mfaEnabled,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            }
+            const authPayload: AuthTokenPayload={
+                userid: user._id,
+                email,
+                roles: user?.roles
+            }
+
+            //check if email is verified
+            if(!user?.isEmailVerified){
+                //send verification otp // use fast jwt token 1h
+                const verificationOtp = generateVerificationOTP();
+                const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
+                //update otp and expiry time
+                const updateVerificationDetails = await UserRepository.updateUser(user._id, {verificationOtp, verificationOtpExpiry});
+                //send mail
+                if(updateVerificationDetails){
+                    //send mail via nodemailer and likes
+                }
+
+                //generate fast jwt token
+                const jwtToken = signJwt(authPayload,{},'1h')
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Login successfull, check your email for verification OTP",
+                    error: [],
+                    data: {
+                        user: profileDetails,
+                        authToken: jwtToken
+                    }
+                });
+                return;
+            }
+
+            //check if mfa is enabled
+            if(user.mfaEnabled){
+                //send OTP as mail or sms
+                const mfaType = user.mfaType;
+                // const sendOTP = (mfaType === 'Email')? sendEmail() : ((mfaType === 'SMS')? sendSMS(): null);
+
+                //send fast token
+                const jwtToken = signJwt(authPayload,{},'1h')
+                res.status(400).json({ 
+                    status: false, 
+                    message: (mfaType === 'Email') ? "Login successfull, check your email for verification OTP" : "Login successfull, check your phone SMS for verification OTP",
+                    error: [],
+                    data: {
+                        user: profileDetails,
+                        authToken: jwtToken
+                    }
+                });
+                return;
+            }
+            const jwtToken = signJwt(authPayload,{},'1d')
+            res.status(400).json({ 
+                status: false, 
+                message: "Login successfull",
+                error: [],
+                data: {
+                    user: profileDetails,
+                    authToken: jwtToken
+                }
+            });
+        } catch (error) {
+            
+        }
     }
 
     

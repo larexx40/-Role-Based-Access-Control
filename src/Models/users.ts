@@ -2,23 +2,42 @@ import { Schema, model, Document } from 'mongoose';
 import { UserData } from '../Types/types';
 
 
-
-export interface IUser extends UserData, Document {
-
-}
-
-export interface IUserDocument extends IUser, Document {
+interface IUserDocument extends UserData, Document {
     _id: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-const userSchema = new Schema<IUserDocument>({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+const userSchema = new Schema<IUserDocument>({  
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    maxlength: [50, 'Name cannot exceed 50 characters'],
+    minlength: [3, 'Name must be at least 3 characters long'],
+    lowercase: true,
+  },
+  username: {
+    type: String,
+    unique: true,
+    minlength: [3, 'Username must be at least 3 characters long'],
+    maxlength: [30, 'Username cannot exceed 30 characters'],
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/, 'Invalid email address'],
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long'],
+  },
   phoneno: { type: String, required: true, unique: true},
-  password: { type: String, required: true },
-  username: { type: String, unique: true },
   dob: { type: Date },
   address: { type: String },
   roles: [{ type: String, ref: 'Role' }], // Reference to the Role model (relations wih roles)
@@ -37,4 +56,7 @@ const userSchema = new Schema<IUserDocument>({
   mfaSecretExpiry: { type: Date, required: false },
 });
 
-export const UserModel = model<IUserDocument>('User', userSchema);
+const UserModel = model<IUserDocument>('User', userSchema);
+
+export default UserModel;
+export { IUserDocument };
