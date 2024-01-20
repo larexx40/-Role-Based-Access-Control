@@ -19,3 +19,9 @@ export interface UserData {
   mfaSecret?: string; // Store the secret key for TOTP
   mfaSecretExpiry?: number | null | '';
 }
+
+export interface AuthTokenPayload {
+    userid: string;
+    email: string;
+    roles: string[]; 
+}
