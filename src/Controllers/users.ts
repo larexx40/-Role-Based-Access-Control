@@ -6,6 +6,11 @@ import { signJwt } from '../Utils/jwt';
 import mongoose from 'mongoose';
 import { IUserDocument } from '../Models/users';
 
+declare module "express" {
+    interface Request {
+      user?: AuthTokenPayload;
+    }
+}
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
         // Check if the request body is empty
@@ -227,8 +232,8 @@ class UserController{
 
                 //send fast token
                 const jwtToken = signJwt(authPayload,{},'1h')
-                res.status(400).json({ 
-                    status: false, 
+                res.status(200).json({ 
+                    status: true, 
                     message: (mfaType === 'Email') ? "Login successfull, check your email for verification OTP" : "Login successfull, check your phone SMS for verification OTP",
                     error: [],
                     data: {
@@ -253,7 +258,95 @@ class UserController{
         }
     }
 
+    static async verifyMail(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {otp} = req.body;
+        if(!otp){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        //compare token and expiry time
+        if(otp != user?.verificationOtp){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
+            res.status(400).json({ 
+                status: false, 
+                message: "Token expired",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        //update user otp details
+        const updateFields: Partial<UserData> ={
+            isEmailVerified: true,
+            verificationOtp: '',
+            verificationOtpExpiry: '',
+        }
+
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        res.status(200).json({ 
+            status: true, 
+            message: "Token expired",
+            error: [],
+            data: []
+        });
+                
+
+    }
+    //resendOTP
     
+
+    //enable mfa
+    //disable mfa
+    //verifymfatoken
+    //resentMfaOtp
 }
 
 export default UserController;

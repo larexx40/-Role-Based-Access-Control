@@ -1,5 +1,5 @@
 import RoleModel, { Role, RoleDocument } from "../Models/role";
-import { UserModel } from "../Models/users";
+import UserModel from "../Models/users";
 
 class RoleRepository {
     static async createUser(role: Role ): Promise<RoleDocument> {
