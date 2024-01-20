@@ -1,6 +1,7 @@
+import { UserData } from './../Types/types';
 import { NextFunction, Request, Response } from "express";
 import { OTPExpiryTime, generateVerificationOTP, hashPassword } from "../Utils/utils";
-import { IUser } from "../Models/users";
+import UserRepository from "../Repositories/users";
 
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
@@ -26,17 +27,61 @@ class UserController{
             return;
         }
 
+        //check if unique data exist
+        const [isEmailExist, isPhonenoExist, isUsernameExist] = await Promise.all([
+            UserRepository.checkIfExist({email}), 
+            UserRepository.checkIfExist({phoneno}), 
+            username ? UserRepository.checkIfExist({username}): null
+        ])
+
+        if(isEmailExist){
+            res.status(400).json({ 
+                status: false, 
+                message: "Account with email already exist",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(isPhonenoExist){
+            res.status(400).json({ 
+                status: false, 
+                message: "Account with phone number already exist",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(isUsernameExist){
+            res.status(400).json({ 
+                status: false, 
+                message: "Account with username already exist",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
         const newPassword = await hashPassword(password);
         const verificationOtp = generateVerificationOTP();
         const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
-        const user: IUser={
+        const userData: UserData = {
             name,
             email,
             phoneno, 
             password: newPassword,
-            
-
+            roles: role, 
+            username, 
+            dob, 
+            address,
+            verificationOtp,
+            verificationOtpExpiry
         }
+
+        //save user 
+        const save = await UserRepository.createUser(userData);
     }
 }
 

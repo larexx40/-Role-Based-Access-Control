@@ -1,7 +1,8 @@
 import { IUser, IUserDocument, UserModel } from "../Models/users";
+import { UserData } from "../Types/types";
 
 class UserRepository {
-    static async createUser(user: IUser): Promise<IUserDocument> {
+    static async createUser(user: UserData): Promise<IUserDocument> {
         try {
             const newUser = await UserModel.create(user);
             return newUser;
@@ -20,7 +21,7 @@ class UserRepository {
         }
     }
     
-    static async updateUser(userId: string, updateData: Partial<IUser>):Promise<IUserDocument | null> {
+    static async updateUser(userId: string, updateData: Partial<UserData>):Promise<IUserDocument | null> {
         try {
             return UserModel.findByIdAndUpdate(userId, updateData, { new: true }).populate('roles');
         } catch (error) {
