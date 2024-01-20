@@ -16,9 +16,9 @@ export interface UserData {
     verificationOtp?: number | null | '';
     verificationOtpExpiry?: Date | null | '';
     mfaEnabled?: boolean;
-    mfaType?: mfaType;
+    mfaType?: mfaType | '';
     mfaSecret?: string; // Store the secret key for TOTP
-    mfaSecretExpiry?: number | null | '';
+    mfaSecretExpiry?: Date | null | '';
 }
 
 export interface AuthTokenPayload {

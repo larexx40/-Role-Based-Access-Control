@@ -408,12 +408,199 @@ class UserController{
 
                
     }
-
-
     //enable mfa
+    static async enableMFA(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        const {mfaType} = req.body;
+        if(!mfaType){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass all required field",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        if(mfaType !== 'Email' || mfaType !== 'SMS'){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid MFA type passed",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        } 
+
+        //confirm if email or phone verified
+        if(!user.isEmailVerified || !user.isPhoneVerified){
+            res.status(400).json({ 
+                status: false, 
+                message: "Verify your email and or phone number to enable MFA",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const updateFields: Partial<UserData> ={
+            mfaEnabled: true,
+            mfaType: mfaType
+        }
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        res.status(200).json({ 
+            status: true, 
+            message: "MFA enabled successful",
+            error: [],
+            data: []
+        });
+
+    }
     //disable mfa
+    static async disableMFA(req: Request, res:Response, next: NextFunction): Promise<void>{
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        } 
+
+        
+        const updateFields: Partial<UserData> ={
+            mfaEnabled: false,
+            mfaType: '',
+            mfaSecret: '',
+        }
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        res.status(200).json({ 
+            status: true, 
+            message: "MFA disabled successful",
+            error: [],
+            data: []
+        });
+    }
     //verifymfatoken
+    static async verifyMFAToken(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {otp} = req.body;
+        if(!otp){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        //compare token and expiry time
+        if(otp != user?.mfaSecret){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(user?.mfaSecretExpiry && new Date() > user.mfaSecretExpiry){
+            res.status(400).json({ 
+                status: false, 
+                message: "Token expired",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        res.status(200).json({ 
+            status: true, 
+            message: "MFA verified",
+            error: [],
+            data: []
+        });
+                
+
+    }
     //resentMfaOtp
+    
 }
 
 export default UserController;
