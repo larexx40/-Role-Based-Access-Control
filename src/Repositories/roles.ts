@@ -1,4 +1,5 @@
 import RoleModel, { Role, RoleDocument } from "../Models/role";
+import { UserModel } from "../Models/users";
 
 class RoleRepository {
     static async createUser(role: Role ): Promise<RoleDocument> {
@@ -43,10 +44,21 @@ class RoleRepository {
     
     static async deleteRole(roleId: string): Promise<void> {
         try {
+            const role = await RoleModel.findById(roleId);
+            if(!role){
+                throw new Error("Not found");
+            }
+            //check if it has been assigned to user
+            const assigned = await UserModel.find({roles: role.name});
+            if(assigned.length > 0){
+                throw new Error("Assigned");
+                
+            }
+
           await RoleModel.findByIdAndDelete(roleId);
         } catch (error) {
-          console.error("Role DB error:", error);
-          throw error;
+            console.error("Role DB error:", error);
+            throw error;
         }
     }
     
@@ -78,7 +90,7 @@ class RoleRepository {
         try {
           const role = await RoleModel.findByIdAndUpdate(
             roleId,
-            { $pull: { permissions: permission } },
+            { $pull: { "domain.permissions": permission } },
             { new: true }
           );
           return role;

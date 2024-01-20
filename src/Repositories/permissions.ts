@@ -1,4 +1,5 @@
 import PermissionModel, { Permission, PermissionDocument } from "../Models/permissions";
+import RoleModel from "../Models/role";
 
 class PermissionRepository {
     
@@ -41,12 +42,27 @@ class PermissionRepository {
         }
     }
 
-    static async deletePermision(id: string): Promise<void | null> {
+    static async deletePermision(id: string): Promise<void|null> {
         try {
+            //NB error thrown will be catched in controller
+            //check if it exist
+            const permission = await PermissionModel.findById(id)
+            if (!permission) {
+                throw new Error("Not found");                
+            }
+
+            //check if it has been assigned
+            const assignToRole = await RoleModel.find({"domain.permission": permission.name})
+            if(assignToRole.length > 0){
+                throw new Error("Assigned");
+            }
+
+            //delete
             return await PermissionModel.findByIdAndDelete(id)
+
         } catch (error) {
-            console.error("Permission DB error:", error);
-            throw error;
+                console.error("Permission DB error:", error);
+                throw error;
         }
     }
 

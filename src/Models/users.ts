@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 
 const statuses = ["ACTIVE", "INACTIVE", "SUSPENDED", "DELETED", "BANNED"] as const;
+type mfaType = 'Email'| 'SMS';
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -17,6 +18,7 @@ export interface IUser extends Document {
   verificationOtp?: number | null | '';
   verificationOtpExpiry?: Date | null | '';
   mfaEnabled?: number;
+  mfaType?: mfaType;
   mfaSecret?: string; // Store the secret key for TOTP
   mfaSecretExpiry?: number | null | '';
 }
@@ -46,6 +48,7 @@ const userSchema = new Schema<IUserDocument>({
   verificationOtp: { type: Number, required: false },
   verificationOtpExpiry: { type: Date, required: false },
   mfaEnabled: { type: Boolean, default: false },
+  mfaType: {type: String, enum: ['Email', 'SMS'], default: 'Email', required: false},
   mfaSecret: { type: Number },
   mfaSecretExpiry: { type: Date, required: false },
 });
