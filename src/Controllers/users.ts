@@ -333,7 +333,7 @@ class UserController{
         const newUser = UserRepository.updateUser(user._id, updateFields);
         res.status(200).json({ 
             status: true, 
-            message: "Token expired",
+            message: "Email verified",
             error: [],
             data: []
         });
@@ -341,7 +341,74 @@ class UserController{
 
     }
     //resendOTP
-    
+    static async resendVerifyOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if(!req.params){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass all required field",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {type} = req.params;
+        if(type !== 'email' && type !== 'phone'){
+            res.status(400).json({ 
+                status: false, 
+                message: "Verification type can be email or phone number",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //update new detail
+        const verificationOtp = generateVerificationOTP();
+        const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
+        //update user otp details
+        const updateFields: Partial<UserData> ={
+            isEmailVerified: true,
+            verificationOtp: '',
+            verificationOtpExpiry: '',
+        }
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        //send email or sms
+        // const sendOTP = (type === 'email')? sendEmail() : sendSMS();
+        res.status(200).json({ 
+            status: true, 
+            message: (type === 'email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
+            error: [],
+            data: []
+        });
+
+
+               
+    }
+
 
     //enable mfa
     //disable mfa
