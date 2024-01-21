@@ -30,6 +30,21 @@ class UserRepository {
             throw error;
         }
     }
+
+    static async updateUserRoles(userId: string, newRoles: string | string[]): Promise<IUserDocument | null> {
+      try {
+          const updatedUser = await UserModel.findByIdAndUpdate(
+              userId,
+              { $set: { roles: newRoles } },
+              { new: true }
+          ).populate('roles');
+  
+          return updatedUser;
+      } catch (error) {
+          console.error("User DB error:", error);
+          throw error;
+      }
+  }
     
     static async deleteUser(userId: string): Promise<void> {
         try {

@@ -7,7 +7,7 @@ class RoleRepository {
             const newrole = await RoleModel.create(role);
             return newrole;
         } catch (error) {
-            console.error("User DB error:", error);
+            console.error("Role DB error:", error);
             throw error;
         }
     }
@@ -51,8 +51,7 @@ class RoleRepository {
             //check if it has been assigned to user
             const assigned = await UserModel.find({roles: role.name});
             if(assigned.length > 0){
-                throw new Error("Assigned");
-                
+                throw new Error("Assigned"); 
             }
 
           await RoleModel.findByIdAndDelete(roleId);
@@ -90,7 +89,7 @@ class RoleRepository {
         try {
           const role = await RoleModel.findByIdAndUpdate(
             roleId,
-            { $pull: { "domain.permissions": permission } },
+            { $pull: { "permissions": permission } },
             { new: true }
           );
           return role;
@@ -99,6 +98,17 @@ class RoleRepository {
           return null;
         }
     }
+
+    static async checkIfExist(whereClause: any): Promise<boolean | null>{
+      try {
+          const isExist = await RoleModel.find(whereClause);
+          return (isExist)? true: false;
+          
+      } catch (error) {
+          console.error("Role DB error:", error);
+          throw error;
+      }
+  }
 }
 
 export default RoleRepository;

@@ -2,10 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Role extends Document {
   name: string;
-  domain: {
-    name: string;
-    permissions: string[];
-  };
+  permissions: string[];
 }
 
 export interface RoleDocument extends Role, Document {
@@ -16,10 +13,7 @@ export interface RoleDocument extends Role, Document {
 
 const roleSchema = new Schema<RoleDocument>({
   name: { type: String, required: true, unique: true },
-  domain: {
-    name: { type: String, required: true },
-    permissions: [{ type: String, ref: 'Permission' }], // Reference to the Permission model (relations)
-  },
+  permissions: [{ type: String, ref: 'Permission' }], 
 });
 
 const RoleModel = mongoose.model<RoleDocument>('Role', roleSchema);

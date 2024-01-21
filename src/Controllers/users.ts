@@ -5,6 +5,7 @@ import UserRepository from "../Repositories/users";
 import { signJwt } from '../Utils/jwt';
 import mongoose from 'mongoose';
 import { IUserDocument } from '../Models/users';
+import RoleRepository from '../Repositories/roles';
 
 declare module "express" {
     interface Request {
@@ -391,9 +392,8 @@ class UserController{
         const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
         //update user otp details
         const updateFields: Partial<UserData> ={
-            isEmailVerified: true,
-            verificationOtp: '',
-            verificationOtpExpiry: '',
+            verificationOtp,
+            verificationOtpExpiry,
         }
         const newUser = UserRepository.updateUser(user._id, updateFields);
         //send email or sms
@@ -600,6 +600,227 @@ class UserController{
 
     }
     //resentMfaOtp
+    static async resendMFAOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //confirm if mfa is enabled
+        if(!user.mfaEnabled){
+            res.status(400).json({ 
+                status: false, 
+                message: "Enable MFA to access this endpoint",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const mfaType = user.mfaType
+        if(!mfaType){
+            res.status(400).json({ 
+                status: false, 
+                message: "Set your MFA type",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //update new detail
+        const mfaSecret = generateVerificationOTP();
+        const mfaSecretExpiry = new Date(Date.now() + OTPExpiryTime)
+        //update user otp details
+        const updateFields: Partial<UserData> ={
+            mfaSecret,
+            mfaSecretExpiry,
+        }
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        //send email or sms
+        // const sendOTP = (mfaType === 'email')? sendEmail() : sendSMS();
+        res.status(200).json({ 
+            status: true, 
+            message: (mfaType === 'Email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
+            error: [],
+            data: []
+        });
+
+
+               
+    }
+
+    //assignRole
+    static async assignRoleToUser(req: Request, res: Response, next:NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {userId, roleId} = req.body;
+        if(!userId || !roleId){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in the required field",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {roles} = req.user;
+        if (!roles?.includes('Admin')){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //get user with id and assign the role
+        const [user, role] = await Promise.all([
+            UserRepository.getUser({ _id: userId }),
+            RoleRepository.getRole ({_id: roleId}),
+        ]);
+
+        if(!user){
+            res.status(404).json({ 
+                status: false, 
+                message: "User not found",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!role){
+            res.status(404).json({ 
+                status: false, 
+                message: "Role not found",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //update the role
+        const roleName = role.name;
+        const updateUserRole = await UserRepository.updateUserRoles(userId, roleName);
+        res.status(200).json({ 
+            status: true, 
+            message: "Role updated successfully",
+            error: [],
+            data: []
+        });
+    }
+
+    //remove role
+    static async removeUserRole(req: Request, res: Response, next:NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {userId, roleId} = req.body;
+        if(!userId || !roleId){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in the required field",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {roles} = req.user;
+        if (!roles?.includes('Admin')){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //get user with id and assign the role
+        const [user, role] = await Promise.all([
+            UserRepository.getUser({ _id: userId }),
+            RoleRepository.getRole ({_id: roleId}),
+        ]);
+
+        if(!user){
+            res.status(404).json({ 
+                status: false, 
+                message: "User not found",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!role){
+            res.status(404).json({ 
+                status: false, 
+                message: "Role not found",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        //update the role
+    }
     
 }
 
