@@ -1,9 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { Role } from '../Types/types';
 
-export interface Role extends Document {
-  name: string;
-  permissions: string[];
-}
 
 export interface RoleDocument extends Role, Document {
     _id: string;

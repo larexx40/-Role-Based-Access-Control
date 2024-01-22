@@ -21,6 +21,11 @@ export interface UserData {
     mfaSecretExpiry?: Date | null | '';
 }
 
+export interface Role {
+    name: string;
+    permissions: string[];
+}
+
 export interface AuthTokenPayload {
     userid: string;
     email: string;

@@ -1,8 +1,9 @@
-import RoleModel, { Role, RoleDocument } from "../Models/role";
+import RoleModel, { RoleDocument } from "../Models/role";
 import UserModel from "../Models/users";
+import { Role } from "../Types/types";
 
 class RoleRepository {
-    static async createUser(role: Role ): Promise<RoleDocument> {
+    static async createRole(role: Role ): Promise<RoleDocument> {
         try {
             const newrole = await RoleModel.create(role);
             return newrole;
