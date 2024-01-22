@@ -259,6 +259,89 @@ class UserController{
         }
     }
 
+    static async verifyPhoneno(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {otp} = req.body;
+        if(!otp){
+            res.status(400).json({ 
+                status: false, 
+                message: "Pass in verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+
+        //get user with email
+        let user = await UserRepository.getUser({email});
+        if(!user){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid user",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        //compare token and expiry time
+        if(otp != user?.verificationOtp){
+            res.status(400).json({ 
+                status: false, 
+                message: "Invalid verification token",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
+            res.status(400).json({ 
+                status: false, 
+                message: "Token expired",
+                error: [],
+                data: []
+            });
+            return;
+        }
+        //update user otp details
+        const updateFields: Partial<UserData> ={
+            isPhoneVerified: true,
+            verificationOtp: '',
+            verificationOtpExpiry: '',
+        }
+
+        const newUser = UserRepository.updateUser(user._id, updateFields);
+        res.status(200).json({ 
+            status: true, 
+            message: "Phone number verified",
+            error: [],
+            data: []
+        });
+                
+
+    }
+
     static async verifyMail(req: Request, res: Response, next: NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
             res.status(400).json({ 
@@ -353,11 +436,12 @@ class UserController{
             return;
         }
 
-        const {type} = req.params;
+        // Passing query =====> GET request to "/car/honda?color=blue"
+        const {type} = req.query;
         if(type !== 'email' && type !== 'phone'){
             res.status(400).json({ 
                 status: false, 
-                message: "Verification type can be email or phone number",
+                message: "Verification type can only be email or phone number",
                 error: [],
                 data: []
             });
