@@ -1,5 +1,5 @@
 const statuses = ["ACTIVE", "INACTIVE", "SUSPENDED", "DELETED", "BANNED"] as const;
-type mfaType = 'Email'| 'SMS';
+type mfaType = 'EMAIL'| 'SMS';
 export interface UserData {
     [x: string]: any;
     name: string;
@@ -33,7 +33,7 @@ export interface AuthTokenPayload {
 }
 
 export interface UserProfile {
-    _id: string,
+    userid: string,
     name: string;
     username?: string;
     email: string;

@@ -1,17 +1,20 @@
 import { Router } from "express";
 import UserController from "../Controllers/users";
-import { checkToken } from "../middleware/auth";
+import { checkToken, isAdmin } from "../middleware/auth";
 const userRouter = Router();
 
 userRouter.post('/signup', UserController.signup);
 userRouter.post('/verify-email',checkToken, UserController.verifyMail);
 userRouter.post('/verify-phoneno', checkToken, UserController.verifyPhoneno);
-userRouter.post('resend-verify-otp', checkToken, UserController.resendVerifyOTP);
+userRouter.post('/resend-verify-otp', checkToken, UserController.resendVerifyOTP);
 userRouter.post('/login', UserController.login);
 
 userRouter.get('/send-otp', checkToken, UserController.resendVerifyOTP);
+userRouter.get('/profile', checkToken, UserController.getDetails)
 
-
+//admin
+userRouter.post('/assign-role/:userId', checkToken, isAdmin, UserController.assignRoleToUser)
+userRouter.post('/remove-role/:userId', checkToken, isAdmin, UserController.removeUserRole)
 
 
 

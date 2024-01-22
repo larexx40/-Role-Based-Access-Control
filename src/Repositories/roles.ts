@@ -103,7 +103,7 @@ class RoleRepository {
     static async checkIfExist(whereClause: any): Promise<boolean | null>{
       try {
           const isExist = await RoleModel.find(whereClause);
-          return (isExist)? true: false;
+          return (isExist.length> 0)? true: false;
           
       } catch (error) {
           console.error("Role DB error:", error);

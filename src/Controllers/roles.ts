@@ -2,6 +2,7 @@
 import { NextFunction, Request, Response } from "express";
 import RoleRepository from "../Repositories/roles";
 import { Role } from "../Types/types";
+import mongoose from "mongoose";
 
 class Roles {
     //add new role
@@ -382,36 +383,60 @@ class Roles {
             return;
         }
 
-        const roleExist = await RoleRepository.checkIfExist({_id: roleId})
-        if(!roleExist){
-            res.status(404).json({ 
-                status: false, 
-                message: "Role with id not found",
-                error: [],
-                data: []
-            });
-            return;
-        }
-
-        if(permissions.length > 0){
-            for (let i = 0; i < permissions.length; i++) {
-                const removePermission = await RoleRepository.removePermissionFromRole(roleId, permissions[i]);                
+        try {
+            const roleExist = await RoleRepository.checkIfExist({_id: roleId})
+            if(!roleExist){
+                res.status(404).json({ 
+                    status: false, 
+                    message: "Role with id not found",
+                    error: [],
+                    data: []
+                });
+                return;
             }
+
+            if(permissions.length > 0){
+                for (let i = 0; i < permissions.length; i++) {
+                    const removePermission = await RoleRepository.removePermissionFromRole(roleId, permissions[i]);                
+                }
+                res.status(200).json({ 
+                    status: true, 
+                    message: "Permission removed successfully",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            const removePermission = await RoleRepository.removePermissionFromRole(roleId, permissions)
             res.status(200).json({ 
                 status: true, 
                 message: "Permission removed successfully",
                 error: [],
                 data: []
             });
-            return;
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                // const validationErrors: Record<string, string> = Object.values(error.errors).reduce((acc, err) => {
+                //     acc[err.path] = err.message;
+                //     return acc;
+                //   }, {});
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
         }
-        const removePermission = await RoleRepository.removePermissionFromRole(roleId, permissions)
-        res.status(200).json({ 
-            status: true, 
-            message: "Permission removed successfully",
-            error: [],
-            data: []
-        });
 
     }
 

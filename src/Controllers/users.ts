@@ -34,7 +34,7 @@ class UserController{
                 data: []
             });
             return;
-        }
+        };
 
         try {
             //check if unique data exist
@@ -42,7 +42,7 @@ class UserController{
                 UserRepository.checkIfExist({email}), 
                 UserRepository.checkIfExist({phoneno}), 
                 username ? UserRepository.checkIfExist({username}): null
-            ])
+            ])            
 
             if(isEmailExist){
                 res.status(400).json({ 
@@ -101,11 +101,29 @@ class UserController{
             //send welcome mail
             //send verification otp mail
 
+            const profileDetails: UserProfile = {
+                userid: saveUser._id,
+                name: saveUser.name,
+                username: saveUser.username,
+                email: saveUser.email,
+                phoneno: saveUser.phoneno,
+                dob: saveUser.dob,
+                address: saveUser.address,
+                roles: saveUser.roles,
+                status: saveUser.status,
+                isEmailVerified: saveUser.isEmailVerified,
+                isPhoneVerified: saveUser.isPhoneVerified,
+                mfaEnabled: saveUser.mfaEnabled,
+                createdAt: saveUser.createdAt,
+                updatedAt: saveUser.updatedAt,
+            }
             res.status(201).json({
                 status: true,
                 message: "User registration successful",
-                data: saveUser,
-                authToken: jwtToken,
+                data: {
+                    user: profileDetails,
+                    authToken: jwtToken,
+                }
             });
         } catch (error) {
             if (error instanceof mongoose.Error.ValidationError) {
@@ -151,10 +169,13 @@ class UserController{
             });
             return;
         }
+        
 
         try {
             //get user
             const user = await UserRepository.getUser({email});
+            console.log(user);
+            
             if(!user){
                 res.status(400).json({ 
                     status: false, 
@@ -176,9 +197,10 @@ class UserController{
                 });
                 return;
             }
+           
 
             const profileDetails: UserProfile = {
-                _id: user._id,
+                userid: user._id,
                 name: user.name,
                 username: user.username,
                 email: user.email,
@@ -207,9 +229,9 @@ class UserController{
                 //update otp and expiry time
                 const updateVerificationDetails = await UserRepository.updateUser(user._id, {verificationOtp, verificationOtpExpiry});
                 //send mail
-                if(updateVerificationDetails){
-                    //send mail via nodemailer and likes
-                }
+                // if(updateVerificationDetails){
+                //     //send mail via nodemailer and likes
+                // }
 
                 //generate fast jwt token
                 const jwtToken = signJwt(authPayload,{},'1h')
@@ -235,7 +257,7 @@ class UserController{
                 const jwtToken = signJwt(authPayload,{},'1h')
                 res.status(200).json({ 
                     status: true, 
-                    message: (mfaType === 'Email') ? "Login successfull, check your email for verification OTP" : "Login successfull, check your phone SMS for verification OTP",
+                    message: (mfaType === 'EMAIL') ? "Login successfull, check your email for verification OTP" : "Login successfull, check your phone SMS for verification OTP",
                     error: [],
                     data: {
                         user: profileDetails,
@@ -255,7 +277,23 @@ class UserController{
                 }
             });
         } catch (error) {
-            
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
         }
     }
 
@@ -292,53 +330,72 @@ class UserController{
         }
 
         const {email} = req.user;
+             
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //compare token and expiry time
+            if(otp != user?.verificationOtp){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid verification token",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
 
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
+            if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Token expired",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //update user otp details
+            const updateFields: Partial<UserData> ={
+                isPhoneVerified: true,
+                verificationOtp: '',
+                verificationOtpExpiry: '',
+            }
+
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            res.status(200).json({ 
+                status: true, 
+                message: "Phone number verified",
                 error: [],
                 data: []
             });
-            return;
-        }
-        //compare token and expiry time
-        if(otp != user?.verificationOtp){
-            res.status(400).json({ 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Invalid verification token",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-
-        if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
-            res.status(400).json({ 
-                status: false, 
-                message: "Token expired",
-                error: [],
-                data: []
-            });
-            return;
-        }
-        //update user otp details
-        const updateFields: Partial<UserData> ={
-            isPhoneVerified: true,
-            verificationOtp: '',
-            verificationOtpExpiry: '',
-        }
-
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        res.status(200).json({ 
-            status: true, 
-            message: "Phone number verified",
-            error: [],
-            data: []
-        });
-                
 
     }
 
@@ -375,52 +432,71 @@ class UserController{
         }
 
         const {email} = req.user;
+        try {
+           //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //compare token and expiry time
+            if(otp != user?.verificationOtp){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid verification token",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
 
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
+            if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Token expired",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //update user otp details
+            const updateFields: Partial<UserData> ={
+                isEmailVerified: true,
+                verificationOtp: '',
+                verificationOtpExpiry: '',
+            }
+
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            res.status(200).json({ 
+                status: true, 
+                message: "Email verified",
+                error: [],
+                data: []
+            }); 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Invalid user",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-        //compare token and expiry time
-        if(otp != user?.verificationOtp){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid verification token",
-                error: [],
-                data: []
-            });
-            return;
-        }
-
-        if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
-            res.status(400).json({ 
-                status: false, 
-                message: "Token expired",
-                error: [],
-                data: []
-            });
-            return;
-        }
-        //update user otp details
-        const updateFields: Partial<UserData> ={
-            isEmailVerified: true,
-            verificationOtp: '',
-            verificationOtpExpiry: '',
-        }
-
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        res.status(200).json({ 
-            status: true, 
-            message: "Email verified",
-            error: [],
-            data: []
-        });
                 
 
     }
@@ -459,51 +535,63 @@ class UserController{
         }
 
         const {email} = req.user;
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            //update new detail
+            const verificationOtp = generateVerificationOTP();
+            const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
+            //update user otp details
+            const updateFields: Partial<UserData> ={
+                verificationOtp,
+                verificationOtpExpiry,
+            }
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            //send email or sms
+            // const sendOTP = (type === 'email')? sendEmail() : sendSMS();
+            res.status(200).json({ 
+                status: true, 
+                message: (type === 'email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
                 error: [],
                 data: []
             });
-            return;
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
         }
-
-        //update new detail
-        const verificationOtp = generateVerificationOTP();
-        const verificationOtpExpiry = new Date(Date.now() + OTPExpiryTime)
-        //update user otp details
-        const updateFields: Partial<UserData> ={
-            verificationOtp,
-            verificationOtpExpiry,
-        }
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        //send email or sms
-        // const sendOTP = (type === 'email')? sendEmail() : sendSMS();
-        res.status(200).json({ 
-            status: true, 
-            message: (type === 'email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
-            error: [],
-            data: []
-        });
 
 
                
     }
     //enable mfa
     static async enableMFA(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
-        }
-        const {mfaType} = req.body;
+        
+        let mfaType = req.query.type as string;
         if(!mfaType){
             res.status(400).json({ 
                 status: false, 
@@ -513,7 +601,8 @@ class UserController{
             });
             return;
         }
-        if(mfaType !== 'Email' || mfaType !== 'SMS'){
+        mfaType = mfaType.toUpperCase();
+        if(mfaType !== 'EMAIL' && mfaType != "SMS" ){
             res.status(400).json({ 
                 status: false, 
                 message: "Invalid MFA type passed",
@@ -533,40 +622,61 @@ class UserController{
         }
 
         const {email} = req.user;
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
+
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            } 
+
+            //confirm if email or phone verified
+            if(!user.isEmailVerified || !user.isPhoneVerified){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Verify your email and or phone number to enable MFA",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            const updateFields: Partial<UserData> ={
+                mfaEnabled: true,
+                mfaType: mfaType
+            }
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            res.status(200).json({ 
+                status: true, 
+                message: "MFA enabled successful",
                 error: [],
                 data: []
             });
-            return;
-        } 
-
-        //confirm if email or phone verified
-        if(!user.isEmailVerified || !user.isPhoneVerified){
-            res.status(400).json({ 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Verify your email and or phone number to enable MFA",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-
-        const updateFields: Partial<UserData> ={
-            mfaEnabled: true,
-            mfaType: mfaType
-        }
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        res.status(200).json({ 
-            status: true, 
-            message: "MFA enabled successful",
-            error: [],
-            data: []
-        });
 
     }
     //disable mfa
@@ -582,31 +692,52 @@ class UserController{
         }
 
         const {email} = req.user;
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
+
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            } 
+
+            
+            const updateFields: Partial<UserData> ={
+                mfaEnabled: false,
+                mfaType: '',
+                mfaSecret: '',
+            }
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            res.status(200).json({ 
+                status: true, 
+                message: "MFA disabled successful",
                 error: [],
                 data: []
             });
-            return;
-        } 
-
-        
-        const updateFields: Partial<UserData> ={
-            mfaEnabled: false,
-            mfaType: '',
-            mfaSecret: '',
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
         }
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        res.status(200).json({ 
-            status: true, 
-            message: "MFA disabled successful",
-            error: [],
-            data: []
-        });
     }
     //verifymfatoken
     static async verifyMFAToken(req: Request, res: Response, next: NextFunction): Promise<void>{
@@ -643,43 +774,63 @@ class UserController{
 
         const {email} = req.user;
 
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
-                error: [],
-                data: []
-            });
-            return;
-        }
-        //compare token and expiry time
-        if(otp != user?.mfaSecret){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid verification token",
-                error: [],
-                data: []
-            });
-            return;
-        }
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            //compare token and expiry time
+            if(otp != user?.mfaSecret){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid verification token",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
 
-        if(user?.mfaSecretExpiry && new Date() > user.mfaSecretExpiry){
-            res.status(400).json({ 
+            if(user?.mfaSecretExpiry && new Date() > user.mfaSecretExpiry){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Token expired",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            res.status(200).json({ 
+                status: true, 
+                message: "MFA verified",
+                error: [],
+                data: []
+            }); 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Token expired",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-        res.status(200).json({ 
-            status: true, 
-            message: "MFA verified",
-            error: [],
-            data: []
-        });
                 
 
     }
@@ -696,58 +847,77 @@ class UserController{
         }
 
         const {email} = req.user;
-        //get user with email
-        let user = await UserRepository.getUser({email});
-        if(!user){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid user",
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            //confirm if mfa is enabled
+            if(!user.mfaEnabled){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Enable MFA to access this endpoint",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            const mfaType = user.mfaType
+            if(!mfaType){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Set your MFA type",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            //update new detail
+            const mfaSecret = generateVerificationOTP();
+            const mfaSecretExpiry = new Date(Date.now() + OTPExpiryTime)
+            //update user otp details
+            const updateFields: Partial<UserData> ={
+                mfaSecret,
+                mfaSecretExpiry,
+            }
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            //send email or sms
+            // const sendOTP = (mfaType === 'email')? sendEmail() : sendSMS();
+            res.status(200).json({ 
+                status: true, 
+                message: (mfaType === 'EMAIL' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
                 error: [],
                 data: []
             });
-            return;
-        }
-
-        //confirm if mfa is enabled
-        if(!user.mfaEnabled){
-            res.status(400).json({ 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Enable MFA to access this endpoint",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-
-        const mfaType = user.mfaType
-        if(!mfaType){
-            res.status(400).json({ 
-                status: false, 
-                message: "Set your MFA type",
-                error: [],
-                data: []
-            });
-            return;
-        }
-
-        //update new detail
-        const mfaSecret = generateVerificationOTP();
-        const mfaSecretExpiry = new Date(Date.now() + OTPExpiryTime)
-        //update user otp details
-        const updateFields: Partial<UserData> ={
-            mfaSecret,
-            mfaSecretExpiry,
-        }
-        const newUser = UserRepository.updateUser(user._id, updateFields);
-        //send email or sms
-        // const sendOTP = (mfaType === 'email')? sendEmail() : sendSMS();
-        res.status(200).json({ 
-            status: true, 
-            message: (mfaType === 'Email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
-            error: [],
-            data: []
-        });
-
 
                
     }
@@ -796,41 +966,61 @@ class UserController{
             return;
         }
 
-        //get user with id and assign the role
-        const [user, role] = await Promise.all([
-            UserRepository.getUser({ _id: userId }),
-            RoleRepository.getRole ({_id: roleId}),
-        ]);
+        try {
+            //get user with id and assign the role
+            const [user, role] = await Promise.all([
+                UserRepository.getUser({ _id: userId }),
+                RoleRepository.getRole ({_id: roleId}),
+            ]);
 
-        if(!user){
-            res.status(404).json({ 
-                status: false, 
-                message: "User not found",
+            if(!user){
+                res.status(404).json({ 
+                    status: false, 
+                    message: "User not found",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            if(!role){
+                res.status(404).json({ 
+                    status: false, 
+                    message: "Role not found",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            //update the role
+            const roleName = role.name;
+            const updateUserRole = await UserRepository.updateUserRoles(userId, roleName);
+            res.status(200).json({ 
+                status: true, 
+                message: "Role updated successfully",
                 error: [],
                 data: []
             });
-            return;
-        }
-
-        if(!role){
-            res.status(404).json({ 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "Role not found",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-
-        //update the role
-        const roleName = role.name;
-        const updateUserRole = await UserRepository.updateUserRoles(userId, roleName);
-        res.status(200).json({ 
-            status: true, 
-            message: "Role updated successfully",
-            error: [],
-            data: []
-        });
     }
 
     //remove role
@@ -876,35 +1066,126 @@ class UserController{
             });
             return;
         }
+        try {
+            //get user with id and assign the role
+            const [user, role] = await Promise.all([
+                UserRepository.getUser({ _id: userId }),
+                RoleRepository.getRole ({_id: roleId}),
+            ]);
 
-        //get user with id and assign the role
-        const [user, role] = await Promise.all([
-            UserRepository.getUser({ _id: userId }),
-            RoleRepository.getRole ({_id: roleId}),
-        ]);
+            if(!user){
+                res.status(404).json({ 
+                    status: false, 
+                    message: "User not found",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
 
-        if(!user){
-            res.status(404).json({ 
+            if(!role){
+                res.status(404).json({ 
+                    status: false, 
+                    message: "Role not found",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            //update the role
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
                 status: false, 
-                message: "User not found",
+                message: "Internal server error",
                 error: [],
                 data: []
             });
-            return;
+            console.error(error);
         }
-
-        if(!role){
-            res.status(404).json({ 
-                status: false, 
-                message: "Role not found",
-                error: [],
-                data: []
-            });
-            return;
-        }
-
-        //update the role
     }
+
+    //get details
+    static async getDetails(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        const {email} = req.user;
+        try {
+           //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+
+            const profileDetails: UserProfile = {
+                userid: user._id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phoneno: user.phoneno,
+                dob: user.dob,
+                address: user.address,
+                roles: user.roles,
+                status: user.status,
+                isEmailVerified: user.isEmailVerified,
+                isPhoneVerified: user.isPhoneVerified,
+                mfaEnabled: user.mfaEnabled,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            }
+            res.status(200).json({ 
+                status: true, 
+                message: "Profile fetched",
+                error: [],
+                data: profileDetails
+            }); 
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
+        }
+                
+
+    }
+
     
 }
 

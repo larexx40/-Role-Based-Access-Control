@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 dotenv.config()
 
 const dbURL = process.env.MONGO_URL
+
 if (!dbURL) {
     console.error('Error: MONGO_URL environment variable is not set.');
     process.exit(1); // Exit the process with an error code
@@ -13,7 +14,7 @@ if (!dbURL) {
 const options = {
     autoIndex: false, // Don't build indexes
     maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 5 seconds
     socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
     family: 4 // Use IPv4, skip trying IPv6
 }

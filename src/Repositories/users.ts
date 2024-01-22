@@ -1,3 +1,4 @@
+import RoleModel from "../Models/role";
 // import {  IUserDocument, UserModel } from "../Models/users";
 import UserModel, { IUserDocument } from "../Models/users";
 import { UserData } from "../Types/types";
@@ -15,7 +16,23 @@ class UserRepository {
 
     static async getUser(whereClause: any, selectedFields: string[] = []): Promise<IUserDocument | null> {
         try {
-            return await UserModel.findOne(whereClause).select(selectedFields.join(' ')).populate('roles'); // Populate the 'roles' field with actual role data
+            const user =  await UserModel.findOne(whereClause).select(selectedFields.join(' ')).lean().exec();
+            if(!user){
+              return null;
+            }
+            user._id = user._id.toString();
+
+            // Populate the 'roles' field with actual role data
+            // const roles = await RoleModel.find({ name: { $in: user.roles } });
+
+            //  // Map roles to include permissions
+            // const rolesWithPermissions = roles.map(role => ({
+            //   name: role.name,
+            //   permissions: role.permissions,
+            // }));
+
+            // user.roles = rolesWithPermissions
+            return user
         } catch (error) {
             console.error("User DB error:", error);
             throw error;
@@ -24,7 +41,7 @@ class UserRepository {
     
     static async updateUser(userId: string, updateData: Partial<UserData>):Promise<IUserDocument | null> {
         try {
-            return UserModel.findByIdAndUpdate(userId, updateData, { new: true }).populate('roles');
+            return UserModel.findByIdAndUpdate(userId, updateData, { new: true });
         } catch (error) {
             console.error("User DB error:", error);
             throw error;
@@ -37,7 +54,7 @@ class UserRepository {
               userId,
               { $set: { roles: newRoles } },
               { new: true }
-          ).populate('roles');
+          )
   
           return updatedUser;
       } catch (error) {
@@ -58,7 +75,7 @@ class UserRepository {
     static async checkIfExist(whereClause: any): Promise<boolean | null>{
         try {
             const isExist = await UserModel.find(whereClause);
-            return (isExist)? true: false;
+            return (isExist.length> 0)? true: false;
             
         } catch (error) {
             console.error("User DB error:", error);
