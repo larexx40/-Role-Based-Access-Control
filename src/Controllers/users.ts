@@ -4,14 +4,19 @@ import { OTPExpiryTime, comparePassword, generateVerificationOTP, hashPassword }
 import UserRepository from "../Repositories/users";
 import { signJwt } from '../Utils/jwt';
 import mongoose from 'mongoose';
-import { IUserDocument } from '../Models/users';
 import RoleRepository from '../Repositories/roles';
+import { signupValidations } from '../Validations/userValidation';
+import { validationResult } from 'express-validator';
 
 declare module "express" {
     interface Request {
       user?: AuthTokenPayload;
     }
 }
+
+type ValidationResultError = {
+    [string: string]: [string];
+};
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
         // Check if the request body is empty
@@ -20,6 +25,28 @@ class UserController{
                 status: false, 
                 message: "Request body is required",
                 error: [],
+                data: []
+            });
+            return;
+        }
+
+        // Execute validation
+        await Promise.all(signupValidations.map(validation => validation.run(req)));
+        // Execute validation
+        signupValidations.forEach((validation) => validation(req, res, () => {}));
+        // Check for validation errors
+        const validationErrors = validationResult(req);
+        if (!validationErrors.isEmpty()) {
+            const newError: ValidationResultError = {};
+            const errors = validationErrors.array().forEach((error)=>{
+            if(error.type === 'field'){
+                newError[error.path]= error.msg
+            }
+            })
+            res.status(422).json({ 
+                status: false,
+                message: "Validation error",
+                error: newError, 
                 data: []
             });
             return;
