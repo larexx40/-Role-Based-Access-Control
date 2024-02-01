@@ -7,20 +7,21 @@ dotenv.config()
 
 
 
-const { SMTP_HOST, SMTP_PORT, SMTP_TLS, SMTP_USERNAME, SMTP_PASSWORD } = process.env;
+const { SMTP_HOST, SMTP_PORT, SMTP_TLS, GMAIL_USERNAME, GMAIL_PASSWORD } = process.env;
 
-if(!SMTP_HOST || !SMTP_PORT || !SMTP_USERNAME || !SMTP_PASSWORD){
+if(!SMTP_HOST || !SMTP_PORT || !GMAIL_USERNAME || !GMAIL_PASSWORD){
     throw new Error('Mail server configuration is not set');
 }
 const smtpPort = SMTP_PORT ? parseInt(SMTP_PORT, 10) : undefined;
 
 const transport = nodemailer.createTransport({
-    host: SMTP_HOST,
-      port: smtpPort, // Adjust the port based on your server's configuration
-      secure: (SMTP_TLS === '1')? true: false, // Set to true if using SSL/TLS
-      auth: {
-        user: SMTP_USERNAME,
-        pass: SMTP_PASSWORD,
+    // host: SMTP_HOST,
+    // port: smtpPort, // Adjust the port based on your server's configuration
+    // secure: (SMTP_TLS === '1')? true: false, // Set to true if using SSL/TLS
+    service: 'gmail',
+    auth: {
+      user: GMAIL_USERNAME,
+      pass: GMAIL_PASSWORD,
     },
 });
 
@@ -54,7 +55,7 @@ export const sendMailNM = async (options: EmailOption): Promise<boolean> => {
   try {
     // Email options
     const msg = {
-        from: (options.from)? options.from : SMTP_USERNAME , // Replace with the recipient's email address
+        from: (options.from)? options.from : GMAIL_USERNAME , // Replace with the recipient's email address
         ...options
     };
     // Send mail

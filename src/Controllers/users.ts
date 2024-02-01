@@ -1,4 +1,4 @@
-import { AuthTokenPayload, UserData, UserProfile } from './../Types/types';
+import { AuthTokenPayload, EmailWithTemplate, UserData, UserProfile } from './../Types/types';
 import { NextFunction, Request, Response } from "express";
 import { OTPExpiryTime, comparePassword, generateVerificationOTP, hashPassword } from "../Utils/utils";
 import UserRepository from "../Repositories/users";
@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import RoleRepository from '../Repositories/roles';
 import { signupValidations } from '../Validations/userValidation';
 import { validationResult } from 'express-validator';
+import { sendMailNM } from '../Utils/nodemailer';
 
 declare module "express" {
     interface Request {
@@ -126,7 +127,28 @@ class UserController{
             } 
             const jwtToken = signJwt(jwtPayload)
             //send welcome mail
+            const welcomeMail : EmailWithTemplate = {
+                to: userData.email,
+                subject: `Welcome ${userData.name}`,
+                text: "Welcome to Telytech RBAC",
+                template: 'signup',
+                context: {
+                    name: userData.username || userData.name,
+                }
+            }
+            sendMailNM(welcomeMail);
             //send verification otp mail
+            const emailOption : EmailWithTemplate = {
+                to: userData.email,
+                subject: `Account Verification`,
+                text: "Verify your account",
+                template: 'verify-otp',
+                context: {
+                    username: userData.username || userData.name,
+                    otp: verificationOtp
+                }
+            }
+            sendMailNM(emailOption);
 
             const profileDetails: UserProfile = {
                 userid: saveUser._id,
@@ -585,7 +607,19 @@ class UserController{
             }
             const newUser = UserRepository.updateUser(user._id, updateFields);
             //send email or sms
-            // const sendOTP = (type === 'email')? sendEmail() : sendSMS();
+            if(type === "email"){
+                const emailOption : EmailWithTemplate = {
+                    to: user.email,
+                    subject: `Account Verification`,
+                    text: "Verify your account",
+                    template: 'verify-otp',
+                    context: {
+                        username: user.username || user.name,
+                        otp: verificationOtp
+                    }
+                }
+                sendMailNM(emailOption);
+            }
             res.status(200).json({ 
                 status: true, 
                 message: (type === 'email' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
