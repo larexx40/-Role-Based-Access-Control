@@ -49,3 +49,16 @@ export interface UserProfile {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export interface EmailOption {
+    from?: string
+    to: string;
+    subject: string;
+    text: string;
+    html?: string;
+}
+
+export interface EmailWithTemplate extends EmailOption {
+    template: string;
+    context?: { [key: string]: any };
+}

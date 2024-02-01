@@ -3,7 +3,12 @@ import { NextFunction, Request, Response } from "express";
 import RoleRepository from "../Repositories/roles";
 import { Role } from "../Types/types";
 import mongoose from "mongoose";
+import { roleValidations } from "../Validations/role-validation";
+import { validationResult } from "express-validator";
 
+type ValidationResultError = {
+    [string: string]: [string];
+};
 class Roles {
     //add new role
     static async addRole(req: Request, res: Response, next: NextFunction): Promise<void>{
@@ -12,6 +17,28 @@ class Roles {
                 status: false, 
                 message: "Request body is required",
                 error: [],
+                data: []
+            });
+            return;
+        }
+
+        // Execute validation
+        await Promise.all(roleValidations.map(validation => validation.run(req)));
+        // Execute validation
+        roleValidations.forEach((validation) => validation(req, res, () => {}));
+        // Check for validation errors
+        const validationErrors = validationResult(req);
+        if (!validationErrors.isEmpty()) {
+            const newError: ValidationResultError = {};
+            const errors = validationErrors.array().forEach((error)=>{
+            if(error.type === 'field'){
+                newError[error.path]= error.msg
+            }
+            })
+            res.status(422).json({ 
+                status: false,
+                message: "Validation error",
+                error: newError, 
                 data: []
             });
             return;
