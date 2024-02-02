@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv'
+import * as fileType from 'file-type';
 
 dotenv.config()
 
@@ -25,3 +26,13 @@ export const comparePassword = async (plainPassword: string, hashedPassword: str
 }
 
 export const OTPExpiryTime : number = (5 * 60 * 1000);
+
+// export const validateImage = (fileBuffer: Buffer): boolean {
+//     const imageType = fileType(fileBuffer);
+//     return imageType !== null && imageType.mime.startsWith('image/');
+// }
+
+function validateImage(fileBuffer: Buffer): boolean {
+    const imageType = fileType(fileBuffer);
+    return imageType !== null && imageType.mime.startsWith('image/');
+}

@@ -1,6 +1,18 @@
-import cloudinary from "cloudinary"
+
 import  dotenv  from "dotenv";
-import { resolve } from "path";
+import multer, { Multer } from 'multer';
+import cloudinary from "cloudinary";
+import sharp from "sharp";
+
+interface CloudinaryFile extends Express.Multer.File {
+    buffer: Buffer;
+}
+
+
+// Configure Multer for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 
 dotenv.config();
 const {CLOUDINARY_NAME, CLOUDINARY_KEY, CLOUDINARY_SECRET} = process.env;
@@ -11,26 +23,34 @@ cloudinary.v2.config({
     api_secret: CLOUDINARY_SECRET,
 });
 
-export const uploadFile = async (file: any)=>{
-    return new Promise(resolve =>{
-        cloudinary.v2.uploader.upload(file, (_err: any, res: any)=>{
-            resolve({
-                res: res.secure_url
-            })
-        })
-    })
-    // return new Promise(resolve => {
-    //     cloudinary.v2.uploader.upload(file, (_err: any, res: any) => {
-    //       resolve({
-    //         res: res.secure_url,
-    //       })
-    //     })
-    //   })
+
+// Function to upload a file to Cloudinary
+export const uploadFile = (file: any): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        cloudinary.v2.uploader.upload(file, (error: any, result: any) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(result.secure_url);
+            }
+        });
+    });
+};
+
+//resize and upload image
+export const uploadImage = async (image: Buffer)=>{
+    try {
+        const resizeImage = await sharp(image)
+        .resize({ width: 300, height: 300 })
+        .toBuffer();
+
+        const imageUrl = await uploadFile(resizeImage)
+
+        return imageUrl;
+    } catch (error) {
+        console.error("Upload Imaage Error", error)
+        throw new Error("Unable to upload image");
+        
+    }
 }
 
-// const  uploadFile = (file)=>{
-//     return new Promise((resolve) =>{
-//         cloudinary.UploadStream()
-//     })
-// }
-// export default cloudinary;
