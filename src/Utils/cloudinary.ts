@@ -1,5 +1,6 @@
 import cloudinary from "cloudinary"
 import  dotenv  from "dotenv";
+import { resolve } from "path";
 
 dotenv.config();
 const {CLOUDINARY_NAME, CLOUDINARY_KEY, CLOUDINARY_SECRET} = process.env;
@@ -10,4 +11,26 @@ cloudinary.v2.config({
     api_secret: CLOUDINARY_SECRET,
 });
 
-export default cloudinary;
+export const uploadFile = async (file: any)=>{
+    return new Promise(resolve =>{
+        cloudinary.v2.uploader.upload(file, (_err: any, res: any)=>{
+            resolve({
+                res: res.secure_url
+            })
+        })
+    })
+    // return new Promise(resolve => {
+    //     cloudinary.v2.uploader.upload(file, (_err: any, res: any) => {
+    //       resolve({
+    //         res: res.secure_url,
+    //       })
+    //     })
+    //   })
+}
+
+// const  uploadFile = (file)=>{
+//     return new Promise((resolve) =>{
+//         cloudinary.UploadStream()
+//     })
+// }
+// export default cloudinary;
