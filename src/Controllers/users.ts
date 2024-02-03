@@ -1274,9 +1274,55 @@ class UserController{
             return;
         }
 
-        // const image = req.file;
+        const {email} = req.user;
+             
+        try {
+            //get user with email
+            let user = await UserRepository.getUser({email});
+            if(!user){
+                res.status(400).json({ 
+                    status: false, 
+                    message: "Invalid user",
+                    error: [],
+                    data: []
+                });
+                return;
+            }
+            const profilePicUrl = await uploadImage(req.file);
 
-        uploadImage(req.file);
+            //update user otp details
+            const updateFields: Partial<UserData> ={
+                profilePic: profilePicUrl
+            }
+
+            const newUser = UserRepository.updateUser(user._id, updateFields);
+            res.status(200).json({ 
+                status: true, 
+                message: "Profile updated",
+                error: [],
+                data: []
+            });
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                // Mongoose validation error
+                const validationErrors = Object.values(error.errors).map((err) => err.message);
+                res.status(400).json({ 
+                    status: false,
+                    message: "Invalid data passed",
+                    error: validationErrors,
+                    data:[]
+                });
+            }
+            res.status(500).json({ 
+                status: false, 
+                message: "Internal server error",
+                error: [],
+                data: []
+            });
+            console.error(error);
+        }
+
+
     }
 
     
