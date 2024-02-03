@@ -19,6 +19,7 @@ export interface UserData {
     mfaType?: mfaType | '';
     mfaSecret?: number | ''; // Store the secret key for TOTP
     mfaSecretExpiry?: Date | null | '';
+    profilePic?: string | '';
 }
 
 export interface Role {

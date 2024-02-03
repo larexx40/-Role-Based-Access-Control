@@ -8,6 +8,7 @@ userRouter.post('/verify-email',checkToken, UserController.verifyMail);
 userRouter.post('/verify-phoneno', checkToken, UserController.verifyPhoneno);
 userRouter.post('/resend-verify-otp', checkToken, UserController.resendVerifyOTP);
 userRouter.post('/login', UserController.login);
+userRouter.patch('/upload-profile-pic', checkToken, UserController.uploadProfilePic);
 
 userRouter.get('/send-otp', checkToken, UserController.resendVerifyOTP);
 userRouter.get('/profile', checkToken, UserController.getDetails)

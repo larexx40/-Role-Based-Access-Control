@@ -38,9 +38,9 @@ export const uploadFile = (file: any): Promise<string> => {
 };
 
 //resize and upload image
-export const uploadImage = async (image: Buffer)=>{
+export const uploadImage = async (image: CloudinaryFile)=>{
     try {
-        const resizeImage = await sharp(image)
+        const resizeImage = await sharp(image.buffer)
         .resize({ width: 300, height: 300 })
         .toBuffer();
 

@@ -54,6 +54,7 @@ const userSchema = new Schema<IUserDocument>({
   mfaType: {type: String, enum: ['Email', 'SMS'], default: 'Email', required: false},
   mfaSecret: { type: Number },
   mfaSecretExpiry: { type: Date, required: false },
+  profilePic: {type: String, required: false}
 });
 
 const UserModel = model<IUserDocument>('User', userSchema);

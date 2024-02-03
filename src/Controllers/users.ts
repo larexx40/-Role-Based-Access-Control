@@ -8,6 +8,7 @@ import RoleRepository from '../Repositories/roles';
 import { signupValidations } from '../Validations/userValidation';
 import { validationResult } from 'express-validator';
 import { sendMailNM } from '../Utils/nodemailer';
+import { uploadImage } from '../Utils/cloudinary';
 
 declare module "express" {
     interface Request {
@@ -1245,6 +1246,37 @@ class UserController{
         }
                 
 
+    }
+
+    static async uploadProfilePic(req: Request, res: Response, next: NextFunction): Promise<void>{
+        if (!req.body || Object.keys(req.body).length === 0) {
+            res.status(400).json({ 
+                status: false, 
+                message: "Request body is required",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if(!req.user){
+            res.status(400).json({ 
+                status: false, 
+                message: "User not authenticated",
+                error: [],
+                data: []
+            });
+            return;
+        }
+
+        if (!req.file) {
+            res.status(400).json({ error: 'No file uploaded' });
+            return;
+        }
+
+        // const image = req.file;
+
+        uploadImage(req.file);
     }
 
     

@@ -32,7 +32,7 @@ export const OTPExpiryTime : number = (5 * 60 * 1000);
 //     return imageType !== null && imageType.mime.startsWith('image/');
 // }
 
-function validateImage(fileBuffer: Buffer): boolean {
-    const imageType = fileType(fileBuffer);
-    return imageType !== null && imageType.mime.startsWith('image/');
-}
+// export function validateImage(fileBuffer: Buffer): boolean {
+//     const imageType = fileType(fileBuffer);
+//     return imageType !== null && imageType.mime.startsWith('image/');
+// }
