@@ -7,17 +7,13 @@ dotenv.config()
 
 
 
-const { SMTP_HOST, SMTP_PORT, SMTP_TLS, GMAIL_USERNAME, GMAIL_PASSWORD } = process.env;
+const { SMTP_HOST, GMAIL_USERNAME, GMAIL_PASSWORD } = process.env;
 
-if(!SMTP_HOST || !SMTP_PORT || !GMAIL_USERNAME || !GMAIL_PASSWORD){
+if(!SMTP_HOST || !GMAIL_USERNAME || !GMAIL_PASSWORD){
     throw new Error('Mail server configuration is not set');
 }
-const smtpPort = SMTP_PORT ? parseInt(SMTP_PORT, 10) : undefined;
 
 const transport = nodemailer.createTransport({
-    // host: SMTP_HOST,
-    // port: smtpPort, // Adjust the port based on your server's configuration
-    // secure: (SMTP_TLS === '1')? true: false, // Set to true if using SSL/TLS
     service: 'gmail',
     auth: {
       user: GMAIL_USERNAME,
