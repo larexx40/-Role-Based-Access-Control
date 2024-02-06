@@ -51,6 +51,7 @@ export interface UserProfile {
     updatedAt: Date;
 }
 
+
 export interface EmailOption {
     from?: string
     to: string;

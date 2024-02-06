@@ -3,7 +3,7 @@ import { db } from "./Config/db.config";
 import roleRouter from "./Routes/roles";
 import userRouter from "./Routes/users";
 import environment from "./environment";
-
+import { methodNotAllowedHandler, notFoundHandler } from "./middleware/error";
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
@@ -12,6 +12,8 @@ app.get('/', (req, res) => {
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/roles", roleRouter);
 
+app.use(methodNotAllowedHandler)
+app.use(notFoundHandler)
 const PORT = environment.getPort() || 5000;
 
 db.then(() => {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import UserController from "../Controllers/users";
 import { checkToken, isAdmin } from "../middleware/auth";
+import upload from "../Utils/multer";
 const userRouter = Router();
 
 userRouter.post('/signup', UserController.signup);
@@ -8,7 +9,7 @@ userRouter.post('/verify-email',checkToken, UserController.verifyMail);
 userRouter.post('/verify-phoneno', checkToken, UserController.verifyPhoneno);
 userRouter.post('/resend-verify-otp', checkToken, UserController.resendVerifyOTP);
 userRouter.post('/login', UserController.login);
-userRouter.patch('/upload-profile-pic', checkToken, UserController.uploadProfilePic);
+userRouter.patch('/upload-profile-pic', checkToken, upload.single('proflePic'), UserController.uploadProfilePic);
 
 userRouter.get('/send-otp', checkToken, UserController.resendVerifyOTP);
 userRouter.get('/profile', checkToken, UserController.getDetails)

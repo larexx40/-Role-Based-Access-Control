@@ -8,7 +8,7 @@ import RoleRepository from '../Repositories/roles';
 import { signupValidations } from '../Validations/userValidation';
 import { validationResult } from 'express-validator';
 import { sendMailNM } from '../Utils/nodemailer';
-import { uploadImage } from '../Utils/cloudinary';
+import { processAndUploadImage } from '../Utils/cloudinary';
 
 declare module "express" {
     interface Request {
@@ -299,9 +299,29 @@ class UserController{
 
             //check if mfa is enabled
             if(user.mfaEnabled){
+                //generate new mfa and save to db
+                const mfaSecret = generateVerificationOTP();
+                const mfaSecretExpiry = new Date(Date.now() + OTPExpiryTime)
+                //update user otp details
+                const updateFields: Partial<UserData> ={
+                    mfaSecret,
+                    mfaSecretExpiry,
+                }
+                const newUser = UserRepository.updateUser(user._id, updateFields);
                 //send OTP as mail or sms
+                //send email or sms
+                const mailDetails: EmailWithTemplate ={
+                    to: user.email,
+                    subject: `MFA Verification Token`,
+                    text: `Use this OTP: ${mfaSecret} to complete your action`,
+                    template: 'mfa',
+                    context: {
+                        username: user.username || user.name,
+                        mfaToken: mfaSecret
+                    }
+                }
                 const mfaType = user.mfaType;
-                // const sendOTP = (mfaType === 'Email')? sendEmail() : ((mfaType === 'SMS')? sendSMS(): null);
+                const sendOTP = (mfaType === "EMAIL" )? sendMailNM(mailDetails): '';
 
                 //send fast token
                 const jwtToken = signJwt(authPayload,{},'1h')
@@ -716,7 +736,7 @@ class UserController{
             const newUser = UserRepository.updateUser(user._id, updateFields);
             res.status(200).json({ 
                 status: true, 
-                message: "MFA enabled successful",
+                message: `${mfaType} MFA enabled successful`,
                 error: [],
                 data: []
             });
@@ -954,7 +974,17 @@ class UserController{
             }
             const newUser = UserRepository.updateUser(user._id, updateFields);
             //send email or sms
-            // const sendOTP = (mfaType === 'email')? sendEmail() : sendSMS();
+            const mailDetails: EmailWithTemplate ={
+                to: user.email,
+                subject: `MFA Verification Token`,
+                text: `Use this OTP: ${mfaSecret} to complete your action`,
+                template: 'mfa',
+                context: {
+                    username: user.username || user.name,
+                    mfaToken: mfaSecret
+                }
+            }
+            const sendOTP = (mfaType === "EMAIL" )? sendMailNM(mailDetails): '';
             res.status(200).json({ 
                 status: true, 
                 message: (mfaType === 'EMAIL' ) ?"Verification token sent to your mail": "Verification token sent to your phone",
@@ -1249,15 +1279,6 @@ class UserController{
     }
 
     static async uploadProfilePic(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
-        }
 
         if(!req.user){
             res.status(400).json({ 
@@ -1268,11 +1289,16 @@ class UserController{
             });
             return;
         }
-
-        if (!req.file) {
-            res.status(400).json({ error: 'No file uploaded' });
-            return;
-        }
+        
+        // if (!req.file) {
+        //     res.status(400).json({ 
+        //         status: false, 
+        //         message: 'No file uploaded',
+        //         error: [] ,
+        //         data: []
+        //     });
+        //     return;
+        // }
 
         const {email} = req.user;
              
@@ -1288,8 +1314,9 @@ class UserController{
                 });
                 return;
             }
-            const profilePicUrl = await uploadImage(req.file);
-
+            const profilePicUrl = await processAndUploadImage(req);
+            console.log(profilePicUrl);
+        
             //update user otp details
             const updateFields: Partial<UserData> ={
                 profilePic: profilePicUrl

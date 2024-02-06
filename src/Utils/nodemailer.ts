@@ -53,9 +53,13 @@ transport.use('compile', nodemailerExpressHandlebars(handlebarsOptions));
  // Function to send an email
 export const sendMailNM = async (options: EmailOption): Promise<boolean> => {
   try {
+    const mailFrom =  {
+      name: 'Telytech',
+      address: GMAIL_USERNAME
+    }
     // Email options
     const msg = {
-        from: (options.from)? options.from : GMAIL_USERNAME , // Replace with the recipient's email address
+        from: (options.from)? options.from : mailFrom , // Replace with the recipient's email address
         ...options
     };
     // Send mail
