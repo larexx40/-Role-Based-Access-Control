@@ -7,9 +7,9 @@ dotenv.config()
 
 
 
-const { SMTP_HOST, GMAIL_USERNAME, GMAIL_PASSWORD } = process.env;
+const { GMAIL_USERNAME, GMAIL_PASSWORD } = process.env;
 
-if(!SMTP_HOST || !GMAIL_USERNAME || !GMAIL_PASSWORD){
+if(!GMAIL_USERNAME || !GMAIL_PASSWORD){
     throw new Error('Mail server configuration is not set');
 }
 
