@@ -9,6 +9,7 @@ import { signupValidations } from '../Validations/userValidation';
 import { validationResult } from 'express-validator';
 import { sendMailNM } from '../Utils/nodemailer';
 import { processAndUploadImage } from '../Utils/cloudinary';
+import { ApiError } from '../middleware/error';
 
 declare module "express" {
     interface Request {
@@ -23,13 +24,7 @@ class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
         // Check if the request body is empty
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
         }
 
         // Execute validation
@@ -56,13 +51,7 @@ class UserController{
 
         const {name, email, phoneno, password, role, username, dob, address} = req.body;
         if(!name || !phoneno || !email || !username || !password){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in the required fields",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in required fields");
         };
 
         try {
@@ -83,24 +72,13 @@ class UserController{
                 return;
             }
 
-            if(isPhonenoExist){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Account with phone number already exist",
-                    error: [],
-                    data: []
-                });
-                return;
+            if(isPhonenoExist){   
+                throw new ApiError(400,"Account with phone number already exist");
             }
 
             if(isUsernameExist){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Account with username already exist",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Account with username already exist")
+                
             }
 
             const newPassword = await hashPassword(password);
@@ -179,12 +157,9 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors)
+                throw new ApiError(400,"")
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -200,52 +175,26 @@ class UserController{
     static async login(req: Request, res: Response, next: NextFunction): Promise<void>{
         // Check if the request body is empty
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required");
         }
 
         const {email, password} = req.body;
         if(!email || !password){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in the required fields",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in required fields");
         }
         
 
         try {
             //get user
-            const user = await UserRepository.getUser({email});
-            console.log(user);
-            
+            const user = await UserRepository.getUser({email});            
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid email and or password",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid email and or password")
             }
             //compare password
             const hashedPassword: string | undefined = user?.password;
             const isMatch = comparePassword(password, hashedPassword)
             if(!isMatch){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Incorrect password",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Incorrect password")
             }
            
 
@@ -285,16 +234,7 @@ class UserController{
 
                 //generate fast jwt token
                 const jwtToken = signJwt(authPayload,{},'1h')
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Login successfull, check your email for verification OTP",
-                    error: [],
-                    data: {
-                        user: profileDetails,
-                        authToken: jwtToken
-                    }
-                });
-                return;
+                throw new ApiError(400,"Login successfull, check your email for verification OTP")
             }
 
             //check if mfa is enabled
@@ -337,7 +277,7 @@ class UserController{
                 return;
             }
             const jwtToken = signJwt(authPayload,{},'1d')
-            res.status(400).json({ 
+            res.status(200).json({ 
                 status: false, 
                 message: "Login successfull",
                 error: [],
@@ -350,32 +290,17 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
+            throw new ApiError(400,"Internal server error")
             console.error(error);
         }
     }
 
     static async verifyPhoneno(req: Request, res: Response, next: NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
+            
         }
 
         const {otp} = req.body;
@@ -451,12 +376,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -471,13 +391,7 @@ class UserController{
 
     static async verifyMail(req: Request, res: Response, next: NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
         }
 
         const {otp} = req.body;
@@ -552,12 +466,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -573,13 +482,8 @@ class UserController{
     //resendOTP
     static async resendVerifyOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
         if(!req.params){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass all required field",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass all required field")
+            
         }
 
         // Passing query =====> GET request to "/car/honda?color=blue"
@@ -651,12 +555,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -675,23 +574,11 @@ class UserController{
         
         let mfaType = req.query.type as string;
         if(!mfaType){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass all required field",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass all required field")
         }
         mfaType = mfaType.toUpperCase();
         if(mfaType !== 'EMAIL' && mfaType != "SMS" ){
-            res.status(400).json({ 
-                status: false, 
-                message: "Invalid MFA type passed",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Invalid MFA type passed")
         }
         if(!req.user){
             res.status(400).json({ 
@@ -744,12 +631,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -805,12 +687,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -824,13 +701,7 @@ class UserController{
     //verifymfatoken
     static async verifyMFAToken(req: Request, res: Response, next: NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
         }
 
         const {otp} = req.body;
@@ -898,12 +769,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -995,12 +861,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -1017,13 +878,7 @@ class UserController{
     //assignRole
     static async assignRoleToUser(req: Request, res: Response, next:NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
         }
 
         const {userId, roleId} = req.body;
@@ -1098,12 +953,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -1118,13 +968,7 @@ class UserController{
     //remove role
     static async removeUserRole(req: Request, res: Response, next:NextFunction): Promise<void>{
         if (!req.body || Object.keys(req.body).length === 0) {
-            res.status(400).json({ 
-                status: false, 
-                message: "Request body is required",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Request body is required")
         }
 
         const {userId, roleId} = req.body;
@@ -1190,12 +1034,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -1259,12 +1098,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
@@ -1333,12 +1167,7 @@ class UserController{
             if (error instanceof mongoose.Error.ValidationError) {
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
-                res.status(400).json({ 
-                    status: false,
-                    message: "Invalid data passed",
-                    error: validationErrors,
-                    data:[]
-                });
+                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             res.status(500).json({ 
                 status: false, 
