@@ -29,5 +29,41 @@ const notFoundHandler = (
     });
     next(error);
 };
+
+class ApiError extends Error {
+    statusCode: number;
+    error?: string[];
   
-export { methodNotAllowedHandler, notFoundHandler };
+    constructor(statusCode: number, message: string, error?: string[]) {
+      super(message);
+      this.statusCode = statusCode;
+      this.error = error;
+    }
+  }
+  
+  const apiErrorHandler = (
+    err: ApiError,
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { statusCode = 500, message, error } = err;
+    let errorResponse: { status: boolean, message: string, error: string[] } = {
+        status: false,
+        message: message,
+        error: []
+      };
+    
+      if (error) {
+        if (typeof error === 'string') {
+          errorResponse.error.push(error);
+        } else if (Array.isArray(error)) {
+          errorResponse.error = error;
+        }
+      }
+    
+      res.status(statusCode).json(errorResponse);
+  };
+  
+  
+export { methodNotAllowedHandler, notFoundHandler, ApiError, apiErrorHandler };
