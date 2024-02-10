@@ -58,13 +58,7 @@ class UserController{
             ])            
 
             if(isEmailExist){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Account with email already exist",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Account with email already exist")
             }
 
             if(isPhonenoExist){   
@@ -292,13 +286,7 @@ class UserController{
 
         const {otp} = req.body;
         if(!otp){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in verification token",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in verification token")
         }
 
         if(!req.user){
@@ -315,23 +303,11 @@ class UserController{
             }
             //compare token and expiry time
             if(otp != user?.verificationOtp){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid verification token",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid verification token")
             }
 
             if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Token expired",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Token expired")
             }
             //update user otp details
             const updateFields: Partial<UserData> ={
@@ -381,23 +357,11 @@ class UserController{
             }
             //compare token and expiry time
             if(otp != user?.verificationOtp){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid verification token",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid verification token")
             }
 
             if(user?.verificationOtpExpiry && new Date() > user.verificationOtpExpiry){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Token expired",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Token expired")
             }
             //update user otp details
             const updateFields: Partial<UserData> ={
@@ -434,13 +398,7 @@ class UserController{
         // Passing query =====> GET request to "/car/honda?color=blue"
         const {type} = req.query;
         if(type !== 'email' && type !== 'phone'){
-            res.status(400).json({ 
-                status: false, 
-                message: "Verification type can only be email or phone number",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Verification type can only be email or phone number")
         }
 
         if(!req.user){
@@ -522,13 +480,7 @@ class UserController{
 
             //confirm if email or phone verified
             if(!user.isEmailVerified || !user.isPhoneVerified){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Verify your email and or phone number to enable MFA",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Verify your email and or phone number to enable MFA")
             }
 
             const updateFields: Partial<UserData> ={
@@ -597,13 +549,7 @@ class UserController{
 
         const {otp} = req.body;
         if(!otp){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in verification token",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in verification token")
         }
 
         if(!req.user){
@@ -620,23 +566,11 @@ class UserController{
             }
             //compare token and expiry time
             if(otp != user?.mfaSecret){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid verification token",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid verification token")
             }
 
             if(user?.mfaSecretExpiry && new Date() > user.mfaSecretExpiry){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Token expired",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Token expired")
             }
             res.status(200).json({ 
                 status: true, 
