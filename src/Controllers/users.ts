@@ -161,13 +161,7 @@ class UserController{
                 throw new ApiError(400,"")
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
 
     }
@@ -315,13 +309,7 @@ class UserController{
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -330,13 +318,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
             //compare token and expiry time
             if(otp != user?.verificationOtp){
@@ -378,13 +360,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
 
     }
@@ -396,23 +372,11 @@ class UserController{
 
         const {otp} = req.body;
         if(!otp){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in verification token",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in verification token")
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -420,13 +384,7 @@ class UserController{
            //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
             //compare token and expiry time
             if(otp != user?.verificationOtp){
@@ -468,13 +426,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
                 
 
@@ -499,13 +451,7 @@ class UserController{
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -513,13 +459,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
 
             //update new detail
@@ -557,13 +497,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
 
 
@@ -581,13 +515,7 @@ class UserController{
             throw new ApiError(400,"Invalid MFA type passed")
         }
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -596,13 +524,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             } 
 
             //confirm if email or phone verified
@@ -633,26 +555,14 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
 
     }
     //disable mfa
     static async disableMFA(req: Request, res:Response, next: NextFunction): Promise<void>{
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -661,13 +571,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             } 
 
             
@@ -689,13 +593,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
     }
     //verifymfatoken
@@ -716,13 +614,7 @@ class UserController{
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -731,13 +623,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
             //compare token and expiry time
             if(otp != user?.mfaSecret){
@@ -771,13 +657,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
                 
 
@@ -785,13 +665,7 @@ class UserController{
     //resentMfaOtp
     static async resendMFAOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -799,35 +673,17 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
 
             //confirm if mfa is enabled
             if(!user.mfaEnabled){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Enable MFA to access this endpoint",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Enable MFA to access this endpoint")
             }
 
             const mfaType = user.mfaType
             if(!mfaType){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Set your MFA type",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Set your MFA type")
             }
 
             //update new detail
@@ -863,13 +719,8 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(400,"Internal server error")
+            throw new ApiError(500,"Internal server error")
         }
 
                
@@ -883,34 +734,16 @@ class UserController{
 
         const {userId, roleId} = req.body;
         if(!userId || !roleId){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in the required field",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in the required field")
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {roles} = req.user;
         if (!roles?.includes('Admin')){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         try {
@@ -955,13 +788,8 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            
+            throw new ApiError(500,"Internal server error")
         }
     }
 
@@ -973,34 +801,16 @@ class UserController{
 
         const {userId, roleId} = req.body;
         if(!userId || !roleId){
-            res.status(400).json({ 
-                status: false, 
-                message: "Pass in the required field",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(400,"Pass in the required field")
         }
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {roles} = req.user;
         if (!roles?.includes('Admin')){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
         try {
             //get user with id and assign the role
@@ -1010,13 +820,7 @@ class UserController{
             ]);
 
             if(!user){
-                res.status(404).json({ 
-                    status: false, 
-                    message: "User not found",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(404,"User not found")
             }
 
             if(!role){
@@ -1036,26 +840,14 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
     }
 
     //get details
     static async getDetails(req: Request, res: Response, next: NextFunction): Promise<void>{
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
 
         const {email} = req.user;
@@ -1063,13 +855,7 @@ class UserController{
            //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
 
             const profileDetails: UserProfile = {
@@ -1100,13 +886,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
                 
 
@@ -1115,13 +895,7 @@ class UserController{
     static async uploadProfilePic(req: Request, res: Response, next: NextFunction): Promise<void>{
 
         if(!req.user){
-            res.status(400).json({ 
-                status: false, 
-                message: "User not authenticated",
-                error: [],
-                data: []
-            });
-            return;
+            throw new ApiError(401,"User not authenticated")
         }
         
         // if (!req.file) {
@@ -1140,13 +914,7 @@ class UserController{
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
-                res.status(400).json({ 
-                    status: false, 
-                    message: "Invalid user",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(400,"Invalid user")
             }
             const profilePicUrl = await processAndUploadImage(req);
             console.log(profilePicUrl);
@@ -1169,13 +937,7 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            res.status(500).json({ 
-                status: false, 
-                message: "Internal server error",
-                error: [],
-                data: []
-            });
-            console.error(error);
+            throw new ApiError(500,"Internal server error")
         }
 
 
