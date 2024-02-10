@@ -2,6 +2,7 @@ import RoleModel from "../Models/role";
 // import {  IUserDocument, UserModel } from "../Models/users";
 import UserModel, { IUserDocument } from "../Models/users";
 import { UserData } from "../Types/types";
+import { ApiError } from "../middleware/error";
 
 class UserRepository {
     static async createUser(user: UserData): Promise<IUserDocument> {
@@ -9,8 +10,7 @@ class UserRepository {
             const newUser = await UserModel.create(user);
             return newUser;
         } catch (error) {
-            console.error("User DB error:", error);
-            throw error;
+            throw new ApiError(500, "DB server error")
         }
     }
 
@@ -34,8 +34,7 @@ class UserRepository {
             // user.roles = rolesWithPermissions
             return user
         } catch (error) {
-            console.error("User DB error:", error);
-            throw error;
+            throw new ApiError(500, "DB server error")
         }
     }
     
@@ -43,8 +42,7 @@ class UserRepository {
         try {
             return UserModel.findByIdAndUpdate(userId, updateData, { new: true });
         } catch (error) {
-            console.error("User DB error:", error);
-            throw error;
+            throw new ApiError(500, "DB server error")
         }
     }
 
@@ -59,7 +57,7 @@ class UserRepository {
           return updatedUser;
       } catch (error) {
           console.error("User DB error:", error);
-          throw error;
+          throw new ApiError(500, "DB server error")
       }
   }
     
@@ -68,7 +66,7 @@ class UserRepository {
           await UserModel.findByIdAndDelete(userId);
         } catch (error) {
           console.error('Error deleting user:', error);
-          throw new Error('Failed to delete user');
+          throw new ApiError(500, 'Failed to delete user');
         }
     }
 
@@ -78,8 +76,7 @@ class UserRepository {
             return (isExist.length> 0)? true: false;
             
         } catch (error) {
-            console.error("User DB error:", error);
-            throw error;
+            throw new ApiError(500, "DB server error")
         }
     }
 
@@ -88,8 +85,7 @@ class UserRepository {
           const allUsers = await UserModel.find();
           return allUsers;
         } catch (error) {
-          console.error('Error fetching all users:', error);
-          throw new Error('Failed to fetch all users');
+          throw new ApiError(500, 'Error fetching all users:');
         }
     }
 

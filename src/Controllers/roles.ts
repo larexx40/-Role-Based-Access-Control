@@ -78,7 +78,7 @@ class Roles {
 
         const save = await  RoleRepository.createRole(newRole);
         res.status(200).json({ 
-            status: false, 
+            status: true, 
             message: "Role created sucessfully",
             error: [],
             data: save
@@ -146,7 +146,7 @@ class Roles {
 
         const update = await RoleRepository.updateRole(roleId, newRoleData);
         res.status(200).json({ 
-            status: false, 
+            status: true, 
             message: "Role updated successfully",
             error: [],
             data: []
@@ -209,7 +209,7 @@ class Roles {
 
         const deleteRole = await RoleRepository.deleteRole(roleId);
         res.status(200).json({ 
-            status: false, 
+            status: true, 
             message: "Role deleted successfully",
             error: [],
             data: []

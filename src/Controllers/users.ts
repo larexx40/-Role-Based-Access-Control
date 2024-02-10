@@ -23,33 +23,34 @@ type ValidationResultError = {
 type ErrorData = ValidationResultError[]
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
-        // Check if the request body is empty
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-        }
-
-        // Execute validation
-        await Promise.all(signupValidations.map(validation => validation.run(req)));
-        // Execute validation
-        signupValidations.forEach((validation) => validation(req, res, () => {}));
-        // Check for validation errors
-        const validationErrors = validationResult(req);
-        if (!validationErrors.isEmpty()) {
-            const newError: ValidationResultError = {};
-            const errors = validationErrors.array().forEach((error)=>{
-            if(error.type === 'field'){
-                newError[error.path]= error.msg
-            }
-            })
-            throw new ApiError(422,"Validation error", newError)
-        }
-
-        const {name, email, phoneno, password, role, username, dob, address} = req.body;
-        if(!name || !phoneno || !email || !username || !password){
-            throw new ApiError(400,"Pass in required fields");
-        };
-
         try {
+            // Check if the request body is empty
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+            }
+            
+
+            // Execute validation
+            await Promise.all(signupValidations.map(validation => validation.run(req)));
+            // Execute validation
+            signupValidations.forEach((validation) => validation(req, res, () => {}));
+            // Check for validation errors
+            const validationErrors = validationResult(req);
+            if (!validationErrors.isEmpty()) {
+                const newError: ValidationResultError = {};
+                const errors = validationErrors.array().forEach((error)=>{
+                if(error.type === 'field'){
+                    newError[error.path]= error.msg
+                }
+                })
+                throw new ApiError(422,"Validation error", newError)
+            }
+
+            const {name, email, phoneno, password, role, username, dob, address} = req.body;
+            if(!name || !phoneno || !email || !username || !password){
+                throw new ApiError(400,"Pass in required fields");
+            };
+
             //check if unique data exist
             const [isEmailExist, isPhonenoExist, isUsernameExist] = await Promise.all([
                 UserRepository.checkIfExist({email}), 
@@ -66,8 +67,7 @@ class UserController{
             }
 
             if(isUsernameExist){
-                throw new ApiError(400,"Account with username already exist")
-                
+                throw new ApiError(400,"Account with username already exist")  
             }
 
             const newPassword = await hashPassword(password);
@@ -148,24 +148,22 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors)
             }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
 
     }
 
     static async login(req: Request, res: Response, next: NextFunction): Promise<void>{
-        // Check if the request body is empty
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required");
-        }
-
-        const {email, password} = req.body;
-        if(!email || !password){
-            throw new ApiError(400,"Pass in required fields");
-        }
-        
-
         try {
+            // Check if the request body is empty
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required");
+            }
+
+            const {email, password} = req.body;
+            if(!email || !password){
+                throw new ApiError(400,"Pass in required fields");
+            }
             //get user
             const user = await UserRepository.getUser({email});            
             if(!user){
@@ -273,29 +271,27 @@ class UserController{
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors);
             }
-            throw new ApiError(400,"Internal server error")
-            console.error(error);
+            next(error)
         }
     }
 
     static async verifyPhoneno(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-            
-        }
+        try{
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+                
+            }
 
-        const {otp} = req.body;
-        if(!otp){
-            throw new ApiError(400,"Pass in verification token")
-        }
+            const {otp} = req.body;
+            if(!otp){
+                throw new ApiError(400,"Pass in verification token")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-             
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -324,32 +320,27 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
 
     }
 
     static async verifyMail(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-        }
+        try{
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+            }
 
-        const {otp} = req.body;
-        if(!otp){
-            throw new ApiError(400,"Pass in verification token")
-        }
+            const {otp} = req.body;
+            if(!otp){
+                throw new ApiError(400,"Pass in verification token")
+            }
 
-        if(!req.user){
-            throw new ApiError(400,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(400,"User not authenticated")
+            }
 
-        const {email} = req.user;
-        try {
+            const {email} = req.user;
            //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -378,12 +369,7 @@ class UserController{
                 data: []
             }); 
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
                 
 

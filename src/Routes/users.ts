@@ -2,6 +2,7 @@ import { Router } from "express";
 import UserController from "../Controllers/users";
 import { checkToken, isAdmin } from "../middleware/auth";
 import upload from "../Utils/multer";
+import Test from "../Controllers/ro";
 const userRouter = Router();
 
 userRouter.post('/signup', UserController.signup);
@@ -25,5 +26,7 @@ userRouter.post('/enable-mfa', checkToken, UserController.enableMFA);
 userRouter.post('/disable-mfa', checkToken, UserController.disableMFA);
 userRouter.post('/verify-mfa', checkToken, UserController.verifyMFAToken)
 userRouter.post('/resend-mfa-token', checkToken, UserController.resendMFAOTP);
+
+userRouter.post('/test', Test.addTest);
 
 export default userRouter;

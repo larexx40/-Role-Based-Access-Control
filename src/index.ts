@@ -3,7 +3,7 @@ import { db } from "./Config/db.config";
 import roleRouter from "./Routes/roles";
 import userRouter from "./Routes/users";
 import environment from "./environment";
-import { apiErrorHandler, methodNotAllowedHandler, notFoundHandler } from "./middleware/error";
+import { apiErrorHandler, methodNotAllowedHandler, notFoundHandler, ApiError } from "./middleware/error";
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
@@ -12,9 +12,11 @@ app.get('/', (req, res) => {
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/roles", roleRouter);
 
-app.use(methodNotAllowedHandler)
-app.use(notFoundHandler)
+// Error handling middleware should be registered after all routes and middleware
+app.use(methodNotAllowedHandler);
+app.use(notFoundHandler);
 app.use(apiErrorHandler);
+
 const PORT = environment.getPort() || 5000;
 
 db.then(() => {
