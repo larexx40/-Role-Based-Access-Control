@@ -5,6 +5,7 @@ import { Role } from "../Types/types";
 import mongoose from "mongoose";
 import { roleValidations } from "../Validations/role-validation";
 import { validationResult } from "express-validator";
+import { ApiError } from "../middleware/error";
 
 type ValidationResultError = {
     [string: string]: [string];
@@ -35,13 +36,7 @@ class Roles {
                 newError[error.path]= error.msg
             }
             })
-            res.status(422).json({ 
-                status: false,
-                message: "Validation error",
-                error: newError, 
-                data: []
-            });
-            return;
+            throw new ApiError(422,"Validation error", newError)
         }
 
         const {name, permissions} = req.body;

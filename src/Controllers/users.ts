@@ -20,6 +20,7 @@ declare module "express" {
 type ValidationResultError = {
     [string: string]: [string];
 };
+type ErrorData = ValidationResultError[]
 class UserController{
     static async signup(req: Request, res: Response, next: NextFunction): Promise<void>{
         // Check if the request body is empty
@@ -40,13 +41,7 @@ class UserController{
                 newError[error.path]= error.msg
             }
             })
-            res.status(422).json({ 
-                status: false,
-                message: "Validation error",
-                error: newError, 
-                data: []
-            });
-            return;
+            throw new ApiError(422,"Validation error", newError)
         }
 
         const {name, email, phoneno, password, role, username, dob, address} = req.body;
@@ -158,8 +153,6 @@ class UserController{
                 // Mongoose validation error
                 const validationErrors = Object.values(error.errors).map((err) => err.message);
                 throw new ApiError(400,"Invalid data passed", validationErrors)
-                throw new ApiError(400,"")
-                throw new ApiError(400,"Invalid data passed", validationErrors);
             }
             throw new ApiError(500,"Internal server error")
         }
@@ -754,23 +747,11 @@ class UserController{
             ]);
 
             if(!user){
-                res.status(404).json({ 
-                    status: false, 
-                    message: "User not found",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(404,"User not found")
             }
 
             if(!role){
-                res.status(404).json({ 
-                    status: false, 
-                    message: "Role not found",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(404,"Role not found")
             }
 
             //update the role
@@ -824,13 +805,7 @@ class UserController{
             }
 
             if(!role){
-                res.status(404).json({ 
-                    status: false, 
-                    message: "Role not found",
-                    error: [],
-                    data: []
-                });
-                return;
+                throw new ApiError(404,"Role not found")
             }
 
             //update the role
@@ -897,16 +872,6 @@ class UserController{
         if(!req.user){
             throw new ApiError(401,"User not authenticated")
         }
-        
-        // if (!req.file) {
-        //     res.status(400).json({ 
-        //         status: false, 
-        //         message: 'No file uploaded',
-        //         error: [] ,
-        //         data: []
-        //     });
-        //     return;
-        // }
 
         const {email} = req.user;
              
@@ -917,7 +882,6 @@ class UserController{
                 throw new ApiError(400,"Invalid user")
             }
             const profilePicUrl = await processAndUploadImage(req);
-            console.log(profilePicUrl);
         
             //update user otp details
             const updateFields: Partial<UserData> ={

@@ -32,9 +32,9 @@ const notFoundHandler = (
 
 class ApiError extends Error {
     statusCode: number;
-    error?: string[];
+    error?: string[] | string | object;
   
-    constructor(statusCode: number, message: string, error?: string[]) {
+    constructor(statusCode: number, message: string, error?: string[]| string | object) {
       super(message);
       this.statusCode = statusCode;
       this.error = error;
@@ -48,7 +48,7 @@ class ApiError extends Error {
     next: NextFunction
   ) => {
     const { statusCode = 500, message, error } = err;
-    let errorResponse: { status: boolean, message: string, error: string[] } = {
+    let errorResponse: { status: boolean, message: string, error: string[] | string | object  } = {
         status: false,
         message: message,
         error: []
@@ -56,8 +56,10 @@ class ApiError extends Error {
     
       if (error) {
         if (typeof error === 'string') {
-          errorResponse.error.push(error);
+          errorResponse.error =[error];
         } else if (Array.isArray(error)) {
+          errorResponse.error = error;
+        }else if (Object.keys(error).length > 0){
           errorResponse.error = error;
         }
       }
