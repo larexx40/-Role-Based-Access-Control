@@ -376,23 +376,23 @@ class UserController{
     }
     //resendOTP
     static async resendVerifyOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if(!req.params){
-            throw new ApiError(400,"Pass all required field")
-            
-        }
+        try{
+            if(!req.params){
+                throw new ApiError(400,"Pass all required field")
+                
+            }
 
-        // Passing query =====> GET request to "/car/honda?color=blue"
-        const {type} = req.query;
-        if(type !== 'email' && type !== 'phone'){
-            throw new ApiError(400,"Verification type can only be email or phone number")
-        }
+            // Passing query =====> GET request to "/car/honda?color=blue"
+            const {type} = req.query;
+            if(type !== 'email' && type !== 'phone'){
+                throw new ApiError(400,"Verification type can only be email or phone number")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -429,12 +429,7 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
 
 
@@ -442,22 +437,20 @@ class UserController{
     }
     //enable mfa
     static async enableMFA(req: Request, res: Response, next: NextFunction): Promise<void>{
-        
-        let mfaType = req.query.type as string;
-        if(!mfaType){
-            throw new ApiError(400,"Pass all required field")
-        }
-        mfaType = mfaType.toUpperCase();
-        if(mfaType !== 'EMAIL' && mfaType != "SMS" ){
-            throw new ApiError(400,"Invalid MFA type passed")
-        }
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+        try{
+            let mfaType = req.query.type as string;
+            if(!mfaType){
+                throw new ApiError(400,"Pass all required field")
+            }
+            mfaType = mfaType.toUpperCase();
+            if(mfaType !== 'EMAIL' && mfaType != "SMS" ){
+                throw new ApiError(400,"Invalid MFA type passed")
+            }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -481,24 +474,18 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
 
     }
     //disable mfa
     static async disableMFA(req: Request, res:Response, next: NextFunction): Promise<void>{
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+        try{
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -519,32 +506,26 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error);
         }
     }
     //verifymfatoken
     static async verifyMFAToken(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-        }
+        try{
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+            }
 
-        const {otp} = req.body;
-        if(!otp){
-            throw new ApiError(400,"Pass in verification token")
-        }
+            const {otp} = req.body;
+            if(!otp){
+                throw new ApiError(400,"Pass in verification token")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -565,24 +546,18 @@ class UserController{
                 data: []
             }); 
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
                 
-
     }
     //resentMfaOtp
     static async resendMFAOTP(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+        try{
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -627,13 +602,7 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(400,"Internal server error")
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
 
                
@@ -641,25 +610,25 @@ class UserController{
 
     //assignRole
     static async assignRoleToUser(req: Request, res: Response, next:NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-        }
+        try{
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+            }
 
-        const {userId, roleId} = req.body;
-        if(!userId || !roleId){
-            throw new ApiError(400,"Pass in the required field")
-        }
+            const {userId, roleId} = req.body;
+            if(!userId || !roleId){
+                throw new ApiError(400,"Pass in the required field")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {roles} = req.user;
-        if (!roles?.includes('Admin')){
-            throw new ApiError(401,"User not authenticated")
-        }
+            const {roles} = req.user;
+            if (!roles?.includes('Admin')){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        try {
             //get user with id and assign the role
             const [user, role] = await Promise.all([
                 UserRepository.getUser({ _id: userId }),
@@ -684,36 +653,30 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            
-            throw new ApiError(500,"Internal server error")
+            next(error)
         }
     }
 
     //remove role
     static async removeUserRole(req: Request, res: Response, next:NextFunction): Promise<void>{
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new ApiError(400,"Request body is required")
-        }
+        try{
+            if (!req.body || Object.keys(req.body).length === 0) {
+                throw new ApiError(400,"Request body is required")
+            }
 
-        const {userId, roleId} = req.body;
-        if(!userId || !roleId){
-            throw new ApiError(400,"Pass in the required field")
-        }
+            const {userId, roleId} = req.body;
+            if(!userId || !roleId){
+                throw new ApiError(400,"Pass in the required field")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {roles} = req.user;
-        if (!roles?.includes('Admin')){
-            throw new ApiError(401,"User not authenticated")
-        }
-        try {
+            const {roles} = req.user;
+            if (!roles?.includes('Admin')){
+                throw new ApiError(401,"User not authenticated")
+            }
             //get user with id and assign the role
             const [user, role] = await Promise.all([
                 UserRepository.getUser({ _id: userId }),
@@ -730,23 +693,18 @@ class UserController{
 
             //update the role
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error);
         }
     }
 
     //get details
     static async getDetails(req: Request, res: Response, next: NextFunction): Promise<void>{
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
+        try{
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        const {email} = req.user;
-        try {
+            const {email} = req.user;
            //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -776,26 +734,19 @@ class UserController{
                 data: profileDetails
             }); 
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error);
         }
                 
 
     }
 
     static async uploadProfilePic(req: Request, res: Response, next: NextFunction): Promise<void>{
+        try{
+            if(!req.user){
+                throw new ApiError(401,"User not authenticated")
+            }
 
-        if(!req.user){
-            throw new ApiError(401,"User not authenticated")
-        }
-
-        const {email} = req.user;
-             
-        try {
+            const {email} = req.user;
             //get user with email
             let user = await UserRepository.getUser({email});
             if(!user){
@@ -816,12 +767,7 @@ class UserController{
                 data: []
             });
         } catch (error) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                // Mongoose validation error
-                const validationErrors = Object.values(error.errors).map((err) => err.message);
-                throw new ApiError(400,"Invalid data passed", validationErrors);
-            }
-            throw new ApiError(500,"Internal server error")
+            next(error);
         }
 
 
